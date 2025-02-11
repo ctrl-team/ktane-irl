@@ -1,0 +1,39 @@
+# ktane-irl
+
+## Overview
+This project is a real-life adaptation of the game "Keep Talking and Nobody Explodes." The main timer module is based on a Raspberry Pi Pico and a Waveshare 1.8-inch ST7735S-based LCD screen. Other modules may use Arduino or different microcontrollers, with each module documented in its own directory.
+
+## Features
+* Real-life bomb-defusal gameplay
+* Advanced component system
+
+## Software Requirements
+- Arduino IDE
+- TFT_eSPI library (included in lib/)
+
+## Installation
+
+### 1. Clone the Repository
+```sh
+git clone https://github.com/ctrl-team/ktane-irl.git
+cd ktane-irl
+```
+### 2. Configure TFT_eSPI
+TFT_eSPI requires a proper `User_Setup_Select.h` configuration. Users must manually edit:
+```sh
+TFT_eSPI/User_Setup_Select.h
+```
+to include:
+```cpp
+#include "Setup_Waveshare_ST7735S_1_8.h"
+```
+
+## License
+This project is licensed under GNU General Public License v3.0. See the LICENSE file for details.
+
+## Acknowledgments
+- [TFT_eSPI by Bodmer](https://github.com/Bodmer/TFT_eSPI)
+
+## Contributing
+Feel free to submit pull requests or open issues for bug reports and feature requests.
+

@@ -8,18 +8,11 @@
  *              using the TFT_eSPI library.
  *
  * IMPORTANT:  
- *  - This project uses the **Waveshare 1.8" SPI TFT LCD (ST7735S)**.
- *  - The correct display driver (**ST7735_DRIVER**) must be selected.
- *  - The **Setup_Waveshare_ST7735S_1_8.h** file is provided in the same directory.
+ *  - This project uses the **Waveshare 2.4" SPI TFT LCD (ILI9341)**.
+ *  - The correct display driver (**ILI9341**) must be selected.
+ *  - The **Setup304_RP2040_ILI9341_Waveshare_2_4.h** file is provided in the same directory.
  *  - Ensure that **User_Setup_Select.h** in the TFT_eSPI library is configured 
  *    to include this setup file instead of modifying the library directly.
- *
- * Usage:
- *  - In **User_Setup_Select.h**, replace any existing setup include with:
- *      #include "Setup_Waveshare_ST7735S_1_8.h"
- *  - Ensure SPI pins are correctly defined for the Raspberry Pi Pico (RP2040).
- *  - Adjust the tab color define (e.g., ST7735_GREENTAB) if display colors 
- *    appear incorrect.
  ******************************************************************************/
 
 #include "Arduino.h"
@@ -33,6 +26,8 @@
 #define BOTTOM_BUTTON 19
 #define ENTER_BUTTON 20
 #define BACK_BUTTON 21
+
+#define BUZZER_INPUT 2
 
 TFT_eSPI tft = TFT_eSPI();
 
@@ -186,7 +181,7 @@ void render() {
       sprintf(buffer, "%02d:%02d", timer / 60, timer % 60);
 
       tft.setTextColor(TFT_RED, TFT_BLACK);
-      tft.setTextFont(6);
+      tft.setTextFont(8);
       tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth(buffer) / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
       tft.print(buffer);
       break;
@@ -207,6 +202,9 @@ void handle_buttons() {
   bool back_state = digitalRead(BACK_BUTTON) == LOW;
 
   if (down_state && !down_pressed) {
+    tone(BUZZER_INPUT, 1000);
+    delay(50);
+    noTone(BUZZER_INPUT);
     if (opened_menu == MAIN_MENU) {
       selected_item = ++selected_item % 3;
       rerender_content = true;
@@ -217,6 +215,9 @@ void handle_buttons() {
   }
 
   if (enter_state && !enter_pressed) {
+    tone(BUZZER_INPUT, 1000);
+    delay(50);
+    noTone(BUZZER_INPUT);
     if (opened_menu == MAIN_MENU) {
       switch (selected_item) {
         case 0:
@@ -252,6 +253,9 @@ void handle_buttons() {
   }
 
   if (back_state && !back_pressed) {
+    tone(BUZZER_INPUT, 1000);
+    delay(50);
+    noTone(BUZZER_INPUT);
     if (opened_menu == MAIN_MENU && game_started) {
       opened_menu = NONE;
       rerender = true;
@@ -269,6 +273,43 @@ void handle_buttons() {
   back_pressed = back_state;
 }
 
+void game_logic() {
+  int current_time = millis();
+
+  if (opened_menu != NONE && current_time - last_opened >= 10000) {
+    last_opened = 0;
+    opened_menu = NONE;
+    rerender = true;
+  }
+
+  if (opened_menu == NONE && current_time - interval_time >= 1000) {
+    timer--;
+
+    interval_time = millis();
+    rerender_content = true;
+
+    if (timer <= 0) {
+      tft.fillScreen(TFT_BLACK);
+
+      while (digitalRead(ENTER_BUTTON) == LOW) {
+        tft.setTextColor(TFT_RED);
+        tft.setTextFont(2);
+        tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Game over") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2) - 2);
+        tft.print("Game over");
+        tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Press 'Enter' to continue", 1) / 2), (LCD_HEIGHT / 2) + (tft.fontHeight() / 2) + 2, 1);
+        tft.setTextColor(TFT_WHITE);
+        tft.print("Press 'Enter' to continue");
+        delay(50);
+      }
+
+      enter_pressed = true;
+      game_started = false;
+      opened_menu = MAIN_MENU;
+      rerender = true;
+    }
+  }
+}
+
 void setup() {
   tft.init();
   tft.setRotation(1);
@@ -277,6 +318,7 @@ void setup() {
   pinMode(ENTER_BUTTON, INPUT_PULLDOWN);
   pinMode(BACK_BUTTON, INPUT_PULLDOWN);
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(BUZZER_INPUT, OUTPUT);
 
   rerender = true;
 }
@@ -285,39 +327,5 @@ void loop() {
   handle_buttons();
   render();
 
-  if (game_started) {
-    int current_time = millis();
-
-    if (opened_menu != NONE && current_time - last_opened >= 10000) {
-      last_opened = 0;
-      opened_menu = NONE;
-      rerender = true;
-    }
-
-    if (opened_menu == NONE && current_time - interval_time >= 1000) {
-      timer--;
-
-      interval_time = millis();
-      rerender_content = true;
-
-      if (timer <= 0) {
-        tft.fillScreen(TFT_BLACK);
-
-        while (digitalRead(ENTER_BUTTON) == LOW) {
-          tft.setTextColor(TFT_RED);
-          tft.setTextFont(2);
-          tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Game over") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2) - 2);
-          tft.print("Game over");
-          tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Press 'Enter' to continue", 1) / 2), (LCD_HEIGHT / 2) + (tft.fontHeight() / 2) + 2, 1);
-          tft.setTextColor(TFT_WHITE);
-          tft.print("Press 'Enter' to continue");
-        }
-
-        enter_pressed = true;
-        game_started = false;
-        opened_menu = MAIN_MENU;
-        rerender = true;
-      }
-    }
-  }
+  if (game_started) game_logic();
 }

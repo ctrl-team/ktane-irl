@@ -1,7 +1,8 @@
 # ktane-irl
 
 ## Overview
-This project is a real-life adaptation of the game "Keep Talking and Nobody Explodes." The main timer module is based on a Raspberry Pi Pico and a Waveshare 1.8-inch ST7735S-based LCD screen. Other modules may use Arduino or different microcontrollers, with each module documented in its own directory.
+This project is a real-life adaptation of the game "Keep Talking and Nobody Explodes.".
+Modules may use Arduino or different microcontrollers, with each module documented in its own directory.
 
 ## Features
 * Real-life bomb-defusal gameplay
@@ -25,7 +26,7 @@ TFT_eSPI/User_Setup_Select.h
 ```
 to include:
 ```cpp
-#include "Setup_Waveshare_ST7735S_1_8.h"
+#include "User_Setups/Setup304_RP2040_ILI9341_Waveshare_2_4"
 ```
 
 ## License

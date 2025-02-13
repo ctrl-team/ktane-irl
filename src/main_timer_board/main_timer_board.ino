@@ -34,6 +34,7 @@ TFT_eSPI tft = TFT_eSPI();
 bool rerender = true;
 bool rerender_content = true;
 bool game_started = false;
+bool just_started = false;
 int timer = 0;
 int default_timer = 10;
 int last_opened = 0;
@@ -197,14 +198,15 @@ void render() {
 }
 
 void handle_buttons() {
-  bool down_state = digitalRead(BOTTOM_BUTTON) == LOW;
-  bool enter_state = digitalRead(ENTER_BUTTON) == LOW;
-  bool back_state = digitalRead(BACK_BUTTON) == LOW;
+  bool down_state = digitalRead(BOTTOM_BUTTON) == HIGH;
+  bool enter_state = digitalRead(ENTER_BUTTON) == HIGH;
+  bool back_state = digitalRead(BACK_BUTTON) == HIGH;
 
   if (down_state && !down_pressed) {
     tone(BUZZER_INPUT, 1000);
     delay(50);
     noTone(BUZZER_INPUT);
+
     if (opened_menu == MAIN_MENU) {
       selected_item = ++selected_item % 3;
       rerender_content = true;
@@ -215,16 +217,48 @@ void handle_buttons() {
   }
 
   if (enter_state && !enter_pressed) {
-    tone(BUZZER_INPUT, 1000);
-    delay(50);
-    noTone(BUZZER_INPUT);
+    if (opened_menu != MAIN_MENU || (opened_menu == MAIN_MENU && (!game_started && selected_item != 0))) {
+      tone(BUZZER_INPUT, 1000);
+      delay(50);
+      noTone(BUZZER_INPUT);
+    }
+
     if (opened_menu == MAIN_MENU) {
       switch (selected_item) {
         case 0:
           game_started = !game_started;
           opened_menu = game_started ? NONE : MAIN_MENU;
-          timer = default_timer + 1;
           rerender = true;
+
+          if (game_started) {
+            timer = default_timer;
+            just_started = true;
+
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            tft.setTextFont(6);
+            tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("123") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
+            tft.fillScreen(TFT_BLACK);
+
+            tft.print("3");
+            tone(BUZZER_INPUT, 1000);
+            delay(100);
+            noTone(BUZZER_INPUT);
+            delay(900);
+
+            tft.print("2");
+            tone(BUZZER_INPUT, 1500);
+            delay(100);
+            noTone(BUZZER_INPUT);
+            delay(900);
+
+            tft.print("1");
+            tone(BUZZER_INPUT, 2000);
+            delay(100);
+            noTone(BUZZER_INPUT);
+            delay(900);
+          } else {
+            timer = 0;
+          }
           break;
         case 1:
           opened_menu = SETTINGS;
@@ -256,6 +290,7 @@ void handle_buttons() {
     tone(BUZZER_INPUT, 1000);
     delay(50);
     noTone(BUZZER_INPUT);
+
     if (opened_menu == MAIN_MENU && game_started) {
       opened_menu = NONE;
       rerender = true;
@@ -288,8 +323,26 @@ void game_logic() {
     interval_time = millis();
     rerender_content = true;
 
+    if (timer <= 5) {
+      tone(BUZZER_INPUT, 1000 + 100 * (5 - timer));
+      delay(50);
+      noTone(BUZZER_INPUT);
+    }
+
     if (timer <= 0) {
       tft.fillScreen(TFT_BLACK);
+
+      tone(BUZZER_INPUT, 2000);
+      delay(300);
+      noTone(BUZZER_INPUT);
+      delay(100);
+      tone(BUZZER_INPUT, 2000);
+      delay(300);
+      noTone(BUZZER_INPUT);
+      delay(100);
+      tone(BUZZER_INPUT, 2000);
+      delay(300);
+      noTone(BUZZER_INPUT);
 
       while (digitalRead(ENTER_BUTTON) == LOW) {
         tft.setTextColor(TFT_RED);
@@ -311,6 +364,8 @@ void game_logic() {
 }
 
 void setup() {
+  Serial.begin(115200);
+
   tft.init();
   tft.setRotation(1);
 
@@ -325,7 +380,20 @@ void setup() {
 
 void loop() {
   handle_buttons();
-  render();
+
+  if (just_started) {
+    just_started = false;
+
+    tone(BUZZER_INPUT, 1000);
+    delay(50);
+    tone(BUZZER_INPUT, 1500);
+    delay(50);
+    tone(BUZZER_INPUT, 2000);
+    delay(50);
+    noTone(BUZZER_INPUT);
+  }
 
   if (game_started) game_logic();
+
+  render();
 }

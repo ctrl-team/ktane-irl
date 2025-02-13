@@ -203,9 +203,7 @@ void handle_buttons() {
   bool back_state = digitalRead(BACK_BUTTON) == HIGH;
 
   if (down_state && !down_pressed) {
-    tone(BUZZER_INPUT, 1000);
-    delay(50);
-    noTone(BUZZER_INPUT);
+    tone(BUZZER_INPUT, 1000, 50);
 
     if (opened_menu == MAIN_MENU) {
       selected_item = ++selected_item % 3;
@@ -218,9 +216,7 @@ void handle_buttons() {
 
   if (enter_state && !enter_pressed) {
     if (opened_menu != MAIN_MENU || (opened_menu == MAIN_MENU && (!game_started && selected_item != 0))) {
-      tone(BUZZER_INPUT, 1000);
-      delay(50);
-      noTone(BUZZER_INPUT);
+      tone(BUZZER_INPUT, 1000, 50);
     }
 
     if (opened_menu == MAIN_MENU) {
@@ -240,21 +236,15 @@ void handle_buttons() {
             tft.fillScreen(TFT_BLACK);
 
             tft.print("3");
-            tone(BUZZER_INPUT, 1000);
-            delay(100);
-            noTone(BUZZER_INPUT);
+            tone(BUZZER_INPUT, 1000, 100);
             delay(900);
 
             tft.print("2");
-            tone(BUZZER_INPUT, 1500);
-            delay(100);
-            noTone(BUZZER_INPUT);
+            tone(BUZZER_INPUT, 1500, 100);
             delay(900);
 
             tft.print("1");
-            tone(BUZZER_INPUT, 2000);
-            delay(100);
-            noTone(BUZZER_INPUT);
+            tone(BUZZER_INPUT, 2000, 100);
             delay(900);
           } else {
             timer = 0;
@@ -287,9 +277,7 @@ void handle_buttons() {
   }
 
   if (back_state && !back_pressed) {
-    tone(BUZZER_INPUT, 1000);
-    delay(50);
-    noTone(BUZZER_INPUT);
+    tone(BUZZER_INPUT, 1000, 50);
 
     if (opened_menu == MAIN_MENU && game_started) {
       opened_menu = NONE;
@@ -324,9 +312,7 @@ void game_logic() {
     rerender_content = true;
 
     if (timer <= 5) {
-      tone(BUZZER_INPUT, 1000 + 100 * (5 - timer));
-      delay(50);
-      noTone(BUZZER_INPUT);
+      tone(BUZZER_INPUT, 1000 + 100 * (5 - timer), 50);
     }
 
     if (timer <= 0) {

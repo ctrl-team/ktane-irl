@@ -82,7 +82,7 @@ void render_top_bar() {
 
 void render_content() {
   tft.setCursor(left_padding, 22, 2);
-  tft.setTextSize(1);
+  tft.setTextSize(2);
 
   switch (opened_menu) {
     case MAIN_MENU:
@@ -122,6 +122,7 @@ void render_content() {
 void render_bottom_bar() {
   tft.fillRect(0, LCD_HEIGHT - 20, LCD_WIDTH, LCD_HEIGHT, TFT_RED);
   tft.setTextFont(1);
+  tft.setTextSize(1);
 
   if (opened_menu == MAIN_MENU) {
     switch (selected_item) {

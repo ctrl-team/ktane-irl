@@ -63,6 +63,7 @@ void render_top_bar() {
   tft.fillRect(0, 0, LCD_WIDTH, 20, TFT_RED);
   tft.setCursor(left_padding, 2, 2);
   tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(1);
 
   switch (opened_menu) {
     case MAIN_MENU:
@@ -351,7 +352,8 @@ void game_logic() {
       while (digitalRead(ENTER_BUTTON) == LOW) {
         tft.setTextColor(TFT_RED);
         tft.setTextFont(2);
-        tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Game over") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2) - 2);
+        tft.setTextSize(2);
+        tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Game over") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2) - 20);
         tft.print("Game over");
         tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Press 'Enter' to continue", 1) / 2), (LCD_HEIGHT / 2) + (tft.fontHeight() / 2) + 2, 1);
         tft.setTextColor(TFT_WHITE);

@@ -23,6 +23,7 @@
 #define LCD_HEIGHT TFT_WIDTH
 #define LCD_WIDTH TFT_HEIGHT
 
+#define TOP_BUTTON 18
 #define BOTTOM_BUTTON 19
 #define ENTER_BUTTON 20
 #define BACK_BUTTON 21
@@ -40,6 +41,7 @@ int default_timer = 10;
 int last_opened = 0;
 int interval_time = 0;
 
+bool up_pressed = false;
 bool down_pressed = false;
 bool enter_pressed = false;
 bool back_pressed = false;
@@ -201,9 +203,26 @@ void render() {
 }
 
 void handle_buttons() {
+  bool up_state = digitalRead(TOP_BUTTON) == HIGH;
   bool down_state = digitalRead(BOTTOM_BUTTON) == HIGH;
   bool enter_state = digitalRead(ENTER_BUTTON) == HIGH;
   bool back_state = digitalRead(BACK_BUTTON) == HIGH;
+
+  if(up_state && !up_pressed) {
+    tone(BUZZER_INPUT, 1000);
+    delay(50);
+    noTone(BUZZER_INPUT);
+
+    if (opened_menu == MAIN_MENU) {
+      selected_item = --selected_item;
+      rerender_content = true;
+    } else if (opened_menu == SETTINGS_TIMER) {
+      if(default_timer > 0){
+        default_timer++;
+      }
+      rerender_content = true;
+    }
+  }
 
   if (down_state && !down_pressed) {
     tone(BUZZER_INPUT, 1000);
@@ -308,6 +327,7 @@ void handle_buttons() {
     }
   }
 
+  up_pressed = up_state;
   down_pressed = down_state;
   enter_pressed = enter_state;
   back_pressed = back_state;
@@ -353,8 +373,8 @@ void game_logic() {
         tft.setTextColor(TFT_RED);
         tft.setTextFont(2);
         tft.setTextSize(2);
-        tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Game over") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2) - 20);
-        tft.print("Game over");
+        tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("GAME OVER") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2) - 20);
+        tft.print("GAME OVER");
         tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Press 'Enter' to continue", 1) / 2), (LCD_HEIGHT / 2) + (tft.fontHeight() / 2) + 2, 1);
         tft.setTextColor(TFT_WHITE);
         tft.print("Press 'Enter' to continue");
@@ -375,6 +395,7 @@ void setup() {
   tft.init();
   tft.setRotation(3);
 
+  pinMode(TOP_BUTTON, INPUT_PULLDOWN);
   pinMode(BOTTOM_BUTTON, INPUT_PULLDOWN);
   pinMode(ENTER_BUTTON, INPUT_PULLDOWN);
   pinMode(BACK_BUTTON, INPUT_PULLDOWN);

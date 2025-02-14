@@ -214,7 +214,7 @@ void handle_buttons() {
     noTone(BUZZER_INPUT);
 
     if (opened_menu == MAIN_MENU) {
-      selected_item = --selected_item;
+      selected_item = (selected_item == 0) ? 2 : selected_item - 1;
       rerender_content = true;
     } else if (opened_menu == SETTINGS_TIMER) {
       if(default_timer > 0){

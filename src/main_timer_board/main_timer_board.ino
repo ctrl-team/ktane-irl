@@ -82,6 +82,7 @@ void render_top_bar() {
 
 void render_content() {
   tft.setCursor(left_padding, 22, 2);
+  tft.setTextSize(1);
 
   switch (opened_menu) {
     case MAIN_MENU:
@@ -211,7 +212,9 @@ void handle_buttons() {
       selected_item = ++selected_item % 3;
       rerender_content = true;
     } else if (opened_menu == SETTINGS_TIMER) {
-      default_timer--;
+      if(default_timer > 0){
+        default_timer--;
+      }
       rerender_content = true;
     }
   }
@@ -235,7 +238,7 @@ void handle_buttons() {
             just_started = true;
 
             tft.setTextColor(TFT_WHITE, TFT_BLACK);
-            tft.setTextFont(6);
+            tft.setTextFont(8);
             tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("123") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
             tft.fillScreen(TFT_BLACK);
 
@@ -367,7 +370,7 @@ void setup() {
   Serial.begin(115200);
 
   tft.init();
-  tft.setRotation(1);
+  tft.setRotation(3);
 
   pinMode(BOTTOM_BUTTON, INPUT_PULLDOWN);
   pinMode(ENTER_BUTTON, INPUT_PULLDOWN);

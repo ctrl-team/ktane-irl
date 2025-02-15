@@ -6,6 +6,8 @@ This project uses the [**Waveshare 2.4" SPI ILI9341 LCD (model 18366)**](https:/
 
 ## Wiring
 
+![Schematic_ktane_2025-02-15(1)](https://github.com/user-attachments/assets/3e455859-c36e-485e-b60c-2bf7877c227d)
+
 ### Display
 
 | **Display Pin** | **RP2040 Pin (TFT_eSPI Mapping)** |
@@ -23,12 +25,23 @@ This project uses the [**Waveshare 2.4" SPI ILI9341 LCD (model 18366)**](https:/
 
 This project uses a buzzer **without a built-in generator**, so it must be connected to a **PWM-capable pin**
 
+All values are adjustable in code. You can adjust `BUZZER_INPUT` pin in `main_timer_board.ino`
+
 | **Buzzer Pin** | **RP2040 Pin (TFT_eSPI Mapping)** |
 |----------------|-----------------------------------|
 | +              | GPIO2                             |
 | -              | GND                               |
 
-All values are adjustable in code. You can adjust `BUZZER_INPUT` pin in `main_timer_board.ino`
+### Buttons
+
+All connected to common ground
+
+| **Button**     | **RP2040 Pin (TFT_eSPI Mapping)** |
+|----------------|-----------------------------------|
+| BACK           | GPIO21                            |
+| ENTER          | GPIO20                            |
+| BOTTOM         | GPIO19                            |
+| TOP            | GPIO18                            |
 
 ## **Important Notice**
 

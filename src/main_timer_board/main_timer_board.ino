@@ -23,6 +23,7 @@
 #define LCD_HEIGHT TFT_WIDTH
 #define LCD_WIDTH TFT_HEIGHT
 
+#define TOP_BUTTON 18
 #define BOTTOM_BUTTON 19
 #define ENTER_BUTTON 20
 #define BACK_BUTTON 21
@@ -40,6 +41,7 @@ int default_timer = 10;
 int last_opened = 0;
 int interval_time = 0;
 
+bool up_pressed = false;
 bool down_pressed = false;
 bool enter_pressed = false;
 bool back_pressed = false;
@@ -63,6 +65,7 @@ void render_top_bar() {
   tft.fillRect(0, 0, LCD_WIDTH, 20, TFT_RED);
   tft.setCursor(left_padding, 2, 2);
   tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(1);
 
   switch (opened_menu) {
     case MAIN_MENU:
@@ -82,6 +85,7 @@ void render_top_bar() {
 
 void render_content() {
   tft.setCursor(left_padding, 22, 2);
+  tft.setTextSize(2);
 
   switch (opened_menu) {
     case MAIN_MENU:
@@ -121,6 +125,7 @@ void render_content() {
 void render_bottom_bar() {
   tft.fillRect(0, LCD_HEIGHT - 20, LCD_WIDTH, LCD_HEIGHT, TFT_RED);
   tft.setTextFont(1);
+  tft.setTextSize(1);
 
   if (opened_menu == MAIN_MENU) {
     switch (selected_item) {
@@ -198,9 +203,26 @@ void render() {
 }
 
 void handle_buttons() {
+  bool up_state = digitalRead(TOP_BUTTON) == HIGH;
   bool down_state = digitalRead(BOTTOM_BUTTON) == HIGH;
   bool enter_state = digitalRead(ENTER_BUTTON) == HIGH;
   bool back_state = digitalRead(BACK_BUTTON) == HIGH;
+
+  if(up_state && !up_pressed) {
+    tone(BUZZER_INPUT, 1000);
+    delay(50);
+    noTone(BUZZER_INPUT);
+
+    if (opened_menu == MAIN_MENU) {
+      selected_item = (selected_item == 0) ? 2 : selected_item - 1;
+      rerender_content = true;
+    } else if (opened_menu == SETTINGS_TIMER) {
+      if(default_timer > 0){
+        default_timer++;
+      }
+      rerender_content = true;
+    }
+  }
 
   if (down_state && !down_pressed) {
     tone(BUZZER_INPUT, 1000, 50);
@@ -209,7 +231,9 @@ void handle_buttons() {
       selected_item = ++selected_item % 3;
       rerender_content = true;
     } else if (opened_menu == SETTINGS_TIMER) {
-      default_timer--;
+      if(default_timer > 0){
+        default_timer--;
+      }
       rerender_content = true;
     }
   }
@@ -231,7 +255,7 @@ void handle_buttons() {
             just_started = true;
 
             tft.setTextColor(TFT_WHITE, TFT_BLACK);
-            tft.setTextFont(6);
+            tft.setTextFont(8);
             tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("123") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
             tft.fillScreen(TFT_BLACK);
 
@@ -291,6 +315,7 @@ void handle_buttons() {
     }
   }
 
+  up_pressed = up_state;
   down_pressed = down_state;
   enter_pressed = enter_state;
   back_pressed = back_state;
@@ -333,8 +358,9 @@ void game_logic() {
       while (digitalRead(ENTER_BUTTON) == LOW) {
         tft.setTextColor(TFT_RED);
         tft.setTextFont(2);
-        tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Game over") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2) - 2);
-        tft.print("Game over");
+        tft.setTextSize(2);
+        tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("GAME OVER") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2) - 20);
+        tft.print("GAME OVER");
         tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Press 'Enter' to continue", 1) / 2), (LCD_HEIGHT / 2) + (tft.fontHeight() / 2) + 2, 1);
         tft.setTextColor(TFT_WHITE);
         tft.print("Press 'Enter' to continue");
@@ -353,8 +379,9 @@ void setup() {
   Serial.begin(115200);
 
   tft.init();
-  tft.setRotation(1);
+  tft.setRotation(3);
 
+  pinMode(TOP_BUTTON, INPUT_PULLDOWN);
   pinMode(BOTTOM_BUTTON, INPUT_PULLDOWN);
   pinMode(ENTER_BUTTON, INPUT_PULLDOWN);
   pinMode(BACK_BUTTON, INPUT_PULLDOWN);

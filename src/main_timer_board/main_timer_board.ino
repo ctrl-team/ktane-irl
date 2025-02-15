@@ -203,10 +203,10 @@ void render() {
 }
 
 void handle_buttons() {
-  bool up_state = digitalRead(TOP_BUTTON) == HIGH;
-  bool down_state = digitalRead(BOTTOM_BUTTON) == HIGH;
-  bool enter_state = digitalRead(ENTER_BUTTON) == HIGH;
-  bool back_state = digitalRead(BACK_BUTTON) == HIGH;
+  bool up_state = digitalRead(TOP_BUTTON) == LOW;
+  bool down_state = digitalRead(BOTTOM_BUTTON) == LOW;
+  bool enter_state = digitalRead(ENTER_BUTTON) == LOW;
+  bool back_state = digitalRead(BACK_BUTTON) == LOW;
 
   if(up_state && !up_pressed) {
     tone(BUZZER_INPUT, 1000);
@@ -395,10 +395,10 @@ void setup() {
   tft.init();
   tft.setRotation(3);
 
-  pinMode(TOP_BUTTON, INPUT_PULLDOWN);
-  pinMode(BOTTOM_BUTTON, INPUT_PULLDOWN);
-  pinMode(ENTER_BUTTON, INPUT_PULLDOWN);
-  pinMode(BACK_BUTTON, INPUT_PULLDOWN);
+  pinMode(TOP_BUTTON, INPUT_PULLUP);
+  pinMode(BOTTOM_BUTTON, INPUT_PULLUP);
+  pinMode(ENTER_BUTTON, INPUT_PULLUP);
+  pinMode(BACK_BUTTON, INPUT_PULLUP);
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(BUZZER_INPUT, OUTPUT);
 

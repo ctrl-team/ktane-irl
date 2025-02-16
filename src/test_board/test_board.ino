@@ -10,18 +10,23 @@
 // DEBUG_MODULE
 #define MODULE_TYPE 0x01
 
-void acknowledge(uint8_t data) {
-  Wire.beginTransmission(BROADCAST_ADDR);
-  Wire.write(data);
-  Wire.endTransmission();
-}
+// UNKNOWN
+int requested_command = 0xFF;
 
 void handle_command(int command) {
   switch (command) {
     case 0x04:
-      acknowledge(MODULE_TYPE);
+      Wire.write(MODULE_TYPE);
       break;
   }
+
+  requested_command = 0xFF;
+}
+
+void on_data_request() {
+  Serial.print("Handling command ");
+  Serial.println(command, HEX);
+  handle_command(command);
 }
 
 void on_command_receive(int numBytes) {
@@ -32,14 +37,10 @@ void on_command_receive(int numBytes) {
 
   if (id != MODULE_ID) return;
 
-  int command = Wire.read();
+  requested_command = Wire.read();
 
   Serial.print("Received command ");
   Serial.println(command, HEX);
-
-  delay(10);
-
-  handle_command(command);
 }
 
 void setup() {
@@ -56,6 +57,7 @@ void setup() {
   Wire.begin(BROADCAST_ADDR);
 
   Wire.onReceive(on_command_receive);
+  Wire.onRequest(on_data_request);
 }
 
 void loop() {

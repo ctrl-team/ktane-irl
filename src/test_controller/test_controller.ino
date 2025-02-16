@@ -4,8 +4,8 @@
 #define SDA_PIN 0
 #define SCL_PIN 1
 
-#define BROADCAST_ADDR 0x10
-#define MAX_MODULES 15
+#define OFFSET_ADDRESS 0x08 // we have to avoid reserved addresses
+#define MAX_MODULES 0x0F
 
 enum Module_type {
   DEBUG_MODULE = 0x01,
@@ -21,21 +21,37 @@ struct Module {
 
 Module modules[MAX_MODULES];
 
-uint8_t receive_byte() {
-  Wire.requestFrom(BROADCAST_ADDR, 1);
-  return Wire.available() ? Wire.read() : 0xFF;
+uint8_t receive_byte(uint8_t target_address) {
+  Wire.requestFrom(target_address + OFFSET_ADDRESS, 1);
+  
+  unsigned long start_time = millis();
+  while (!Wire.available()) {
+    // 80ms timeout
+    if (millis() - start_time > 80) {
+      Serial.print("Timeout waiting for response from ");
+      Serial.println(target_address + OFFSET_ADDRESS, HEX);
+      return 0xFF;
+    }
+    delay(1); // allow CPU time for other tasks
+  }
+
+  return Wire.read();
 }
 
-void send_request(uint8_t target_id, uint8_t command) {
-  Wire.beginTransmission(BROADCAST_ADDR);
-  Wire.write(target_id);
+void send_request(uint8_t target_address, uint8_t command) {
+  Wire.beginTransmission(target_address + OFFSET_ADDRESS);
   Wire.write(command);
-  Wire.endTransmission();
+
+  // non-zero means error
+  if (Wire.endTransmission() != 0) {
+    Serial.print("Failed to send request to ");
+    Serial.println(target_address + OFFSET_ADDRESS, HEX);
+  }
 }
 
-Module_type who_are_you(uint8_t target_id) {
-  send_request(target_id, 0x04);
-  return static_cast<Module_type>(receive_byte());
+Module_type who_are_you(uint8_t target_address) {
+  send_request(target_address, 0x04);
+  return static_cast<Module_type>(receive_byte(target_address));
 }
 
 void initialize_devices() {
@@ -44,7 +60,7 @@ void initialize_devices() {
     Serial.println(module, HEX);
 
     modules[module].id = module;
-    modules[module].type = UNKNOWN; 
+    modules[module].type = UNKNOWN;
     modules[module].active = false;
 
     Module_type module_type = who_are_you(module);
@@ -57,6 +73,8 @@ void initialize_devices() {
     Serial.print(module, HEX);
     Serial.print(" identified as type ");
     Serial.println(module_type);
+
+    delay(50); // prevent excessive I²C traffic
   }
 }
 
@@ -66,12 +84,11 @@ void setup() {
   Serial.begin(115200);
   Serial.flush();
 
-  // set i2c pins for the controller
+  // set I²C pins for the controller
   Wire.setSDA(SDA_PIN);
   Wire.setSCL(SCL_PIN);
 
-  // we dont need bus address since we act as a controller
-  Wire.begin();
+  Wire.begin(); // we dont need bus address since we act as a controller
 
   delay(2000);
 

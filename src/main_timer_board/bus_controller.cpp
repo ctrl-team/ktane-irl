@@ -67,18 +67,18 @@ Module_state get_state(uint8_t target_address) {
 }
 
 void refresh_states() {
-  for (Module module : modules) {
-    if (!module.active) continue;
+  for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
+    if (!modules[module].active) continue;
 
-    Module_state module_state = get_state(module.id);
+    Module_state module_state = get_state(modules[module].id);
     if (module_state == STATE_UNKOWN) continue;
 
-    module.state = module_state;
+    modules[module].state = module_state;
 
     Serial.print("[rs] Address 0x");
-    Serial.print(module.id, HEX);
+    Serial.print(modules[module].id, HEX);
     Serial.print(" state is 0x");
-    Serial.println(module.state, HEX);
+    Serial.println(modules[module].state, HEX);
   }
 }
 

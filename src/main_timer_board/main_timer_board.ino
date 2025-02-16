@@ -61,6 +61,7 @@ bool led_state = false;
 
 bool game_started = false;
 bool just_started = false;
+int streak = 0;
 int timer = 0;
 int default_timer = 10;
 int left_padding = 2;
@@ -434,6 +435,15 @@ void loop() {
   if (current_time - state_timer > 500) {
     state_timer = millis();
     refresh_states();
+
+    for (Module module : modules) {
+      if (module.state == STREAK)
+        streak++;
+    }
+
+    Serial.print("[lo] streak: ");
+    Serial.println(streak);
+
     led_state = !led_state;
     digitalWrite(LED_BUILTIN, led_state);
   }

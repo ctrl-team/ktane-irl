@@ -13,8 +13,8 @@
 // UNKNOWN
 int requested_command = 0xFF;
 
-void handle_command(int command) {
-  switch (command) {
+void handle_command() {
+  switch (requested_command) {
     case 0x04:
       Wire.write(MODULE_TYPE);
       break;
@@ -25,8 +25,8 @@ void handle_command(int command) {
 
 void on_data_request() {
   Serial.print("Handling command ");
-  Serial.println(command, HEX);
-  handle_command(command);
+  Serial.println(requested_command, HEX);
+  handle_command();
 }
 
 void on_command_receive(int numBytes) {
@@ -40,7 +40,7 @@ void on_command_receive(int numBytes) {
   requested_command = Wire.read();
 
   Serial.print("Received command ");
-  Serial.println(command, HEX);
+  Serial.println(requested_command, HEX);
 }
 
 void setup() {

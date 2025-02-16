@@ -4,8 +4,8 @@
 #define SDA_PIN 0
 #define SCL_PIN 1
 
-// 0x08 - 0x17
-#define MODULE_ADDRESS 0x08
+// 0x08 - 0x16
+#define MODULE_ADDRESS 0x16
 
 // DEBUG_MODULE
 #define MODULE_TYPE 0x01
@@ -24,7 +24,7 @@ void handle_command() {
 }
 
 void on_data_request() {
-  Serial.print("Handling command ");
+  Serial.print("Handling command 0x");
   Serial.println(requested_command, HEX);
   handle_command();
 }
@@ -32,7 +32,7 @@ void on_data_request() {
 void on_command_receive(int numBytes) {
   requested_command = Wire.read();
 
-  Serial.print("Received command ");
+  Serial.print("Received command 0x");
   Serial.println(requested_command, HEX);
 }
 
@@ -51,6 +51,10 @@ void setup() {
 
   Wire.onReceive(on_command_receive);
   Wire.onRequest(on_data_request);
+
+  Serial.print("Module 0x");
+  Serial.print(MODULE_ADDRESS, HEX);
+  Serial.println(" initialized");
 }
 
 void loop() {

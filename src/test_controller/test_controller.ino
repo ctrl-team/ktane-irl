@@ -28,7 +28,7 @@ uint8_t receive_byte(uint8_t target_address) {
   while (!Wire.available()) {
     // 80ms timeout
     if (millis() - start_time > 80) {
-      Serial.print("Timeout waiting for response from ");
+      Serial.print("Timeout waiting for response from 0x");
       Serial.println(target_address + OFFSET_ADDRESS, HEX);
       return 0xFF;
     }
@@ -38,26 +38,32 @@ uint8_t receive_byte(uint8_t target_address) {
   return Wire.read();
 }
 
-void send_request(uint8_t target_address, uint8_t command) {
+bool send_request(uint8_t target_address, uint8_t command) {
   Wire.beginTransmission(target_address + OFFSET_ADDRESS);
   Wire.write(command);
 
   // non-zero means error
   if (Wire.endTransmission() != 0) {
-    Serial.print("Failed to send request to ");
+    Serial.print("Failed to send request to address 0x");
     Serial.println(target_address + OFFSET_ADDRESS, HEX);
-  }
+    return false;
+  } else
+    return true;
 }
 
 Module_type who_are_you(uint8_t target_address) {
-  send_request(target_address, 0x04);
-  return static_cast<Module_type>(receive_byte(target_address));
+  if (send_request(target_address, 0x04))
+    return static_cast<Module_type>(receive_byte(target_address));
+  else
+    return UNKNOWN;
 }
 
 void initialize_devices() {
   for (int module = 0; module < MAX_MODULES; module++) {
-    Serial.print("Scanning module ");
-    Serial.println(module, HEX);
+    Serial.print("Scanning module 0x");
+    Serial.print(module, HEX);
+    Serial.print(" on address 0x");
+    Serial.println(module + OFFSET_ADDRESS, HEX);
 
     modules[module].id = module;
     modules[module].type = UNKNOWN;
@@ -69,10 +75,10 @@ void initialize_devices() {
     modules[module].type = module_type;
     modules[module].active = true;
 
-    Serial.print("Module ");
+    Serial.print("Module 0x");
     Serial.print(module, HEX);
-    Serial.print(" identified as type ");
-    Serial.println(module_type);
+    Serial.print(" identified as type 0x");
+    Serial.println(module_type, HEX);
 
     delay(50); // prevent excessive I²C traffic
   }

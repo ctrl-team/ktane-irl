@@ -18,47 +18,51 @@
 #include "Arduino.h"
 #include <TFT_eSPI.h>
 #include <SPI.h>
+#include "bus_controller.h"
 
-// these are inverter since we're rotating whole screen 90 degrees
+// swapping width and height because the screen is used in landscape mode
 #define LCD_HEIGHT TFT_WIDTH
 #define LCD_WIDTH TFT_HEIGHT
 
+// I/O definitions
 #define TOP_BUTTON 18
 #define BOTTOM_BUTTON 19
 #define ENTER_BUTTON 20
 #define BACK_BUTTON 21
-
-#define BUZZER_INPUT 2
-
-TFT_eSPI tft = TFT_eSPI();
-
-bool rerender = true;
-bool rerender_content = true;
-bool game_started = false;
-bool just_started = false;
-int timer = 0;
-int default_timer = 10;
-int last_opened = 0;
-int interval_time = 0;
-
-bool up_pressed = false;
-bool down_pressed = false;
-bool enter_pressed = false;
-bool back_pressed = false;
-
-bool led_on = true;
+#define BUZZER_PIN 2
+#define SDA_PIN 0
+#define SCL_PIN 1
 
 enum Menus {
   NONE,
   MAIN_MENU,
   SETTINGS,
-  INFORMATION,
-
-  SETTINGS_TIMER
+  SETTINGS_TIMER,
+  INFORMATION
 };
 
-int opened_menu = MAIN_MENU;
+TFT_eSPI tft = TFT_eSPI();
+
+bool rerender = true;
+bool rerender_content = true;
+Menus opened_menu = MAIN_MENU;
 int selected_item = 0;
+
+// timing variables
+int last_opened = 0;
+int interval_time = 0;
+int state_timer = 0;
+
+bool up_pressed = false;
+bool down_pressed = false;
+bool enter_pressed = false;
+bool back_pressed = false;
+bool led_state = false;
+
+bool game_started = false;
+bool just_started = false;
+int timer = 0;
+int default_timer = 10;
 int left_padding = 2;
 
 void render_top_bar() {
@@ -209,9 +213,9 @@ void handle_buttons() {
   bool back_state = digitalRead(BACK_BUTTON) == LOW;
 
   if(up_state && !up_pressed) {
-    tone(BUZZER_INPUT, 1000);
+    tone(BUZZER_PIN, 1000);
     delay(50);
-    noTone(BUZZER_INPUT);
+    noTone(BUZZER_PIN);
 
     if (opened_menu == MAIN_MENU) {
       selected_item = (selected_item == 0) ? 2 : selected_item - 1;
@@ -225,7 +229,7 @@ void handle_buttons() {
   }
 
   if (down_state && !down_pressed) {
-    tone(BUZZER_INPUT, 1000, 50);
+    tone(BUZZER_PIN, 1000, 50);
 
     if (opened_menu == MAIN_MENU) {
       selected_item = ++selected_item % 3;
@@ -240,7 +244,7 @@ void handle_buttons() {
 
   if (enter_state && !enter_pressed) {
     if (opened_menu != MAIN_MENU || (opened_menu == MAIN_MENU && (!game_started && selected_item != 0))) {
-      tone(BUZZER_INPUT, 1000, 50);
+      tone(BUZZER_PIN, 1000, 50);
     }
 
     if (opened_menu == MAIN_MENU) {
@@ -260,15 +264,15 @@ void handle_buttons() {
             tft.fillScreen(TFT_BLACK);
 
             tft.print("3");
-            tone(BUZZER_INPUT, 1000, 100);
+            tone(BUZZER_PIN, 1000, 100);
             delay(900);
 
             tft.print("2");
-            tone(BUZZER_INPUT, 1500, 100);
+            tone(BUZZER_PIN, 1500, 100);
             delay(900);
 
             tft.print("1");
-            tone(BUZZER_INPUT, 2000, 100);
+            tone(BUZZER_PIN, 2000, 100);
             delay(900);
           } else {
             timer = 0;
@@ -301,7 +305,7 @@ void handle_buttons() {
   }
 
   if (back_state && !back_pressed) {
-    tone(BUZZER_INPUT, 1000, 50);
+    tone(BUZZER_PIN, 1000, 50);
 
     if (opened_menu == MAIN_MENU && game_started) {
       opened_menu = NONE;
@@ -337,23 +341,23 @@ void game_logic() {
     rerender_content = true;
 
     if (timer <= 5) {
-      tone(BUZZER_INPUT, 1000 + 100 * (5 - timer), 50);
+      tone(BUZZER_PIN, 1000 + 100 * (5 - timer), 50);
     }
 
     if (timer <= 0) {
       tft.fillScreen(TFT_BLACK);
 
-      tone(BUZZER_INPUT, 2000);
+      tone(BUZZER_PIN, 2000);
       delay(300);
-      noTone(BUZZER_INPUT);
+      noTone(BUZZER_PIN);
       delay(100);
-      tone(BUZZER_INPUT, 2000);
+      tone(BUZZER_PIN, 2000);
       delay(300);
-      noTone(BUZZER_INPUT);
+      noTone(BUZZER_PIN);
       delay(100);
-      tone(BUZZER_INPUT, 2000);
+      tone(BUZZER_PIN, 2000);
       delay(300);
-      noTone(BUZZER_INPUT);
+      noTone(BUZZER_PIN);
 
       while (digitalRead(ENTER_BUTTON) == LOW) {
         tft.setTextColor(TFT_RED);
@@ -376,7 +380,10 @@ void game_logic() {
 }
 
 void setup() {
+  delay(1000); // necessary, serial seems to break without it
+
   Serial.begin(115200);
+  Serial.flush();
 
   tft.init();
   tft.setRotation(3);
@@ -385,25 +392,50 @@ void setup() {
   pinMode(BOTTOM_BUTTON, INPUT_PULLUP);
   pinMode(ENTER_BUTTON, INPUT_PULLUP);
   pinMode(BACK_BUTTON, INPUT_PULLUP);
+  pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(BUZZER_INPUT, OUTPUT);
+
+  // set i2c pins for the controller
+  Wire.setSDA(SDA_PIN);
+  Wire.setSCL(SCL_PIN);
+  Wire.begin();
+
+  delay(2000);
+
+  initialize_devices();
+
+  for (auto module : modules) {
+    Serial.print("Module at address 0x");
+    Serial.print(module.id, HEX);
+    Serial.print(" is ");
+    Serial.println(module.active ? "online" : "offline");
+  }
 
   rerender = true;
 }
 
 void loop() {
+  int current_time = millis();
+
   handle_buttons();
 
   if (just_started) {
     just_started = false;
 
-    tone(BUZZER_INPUT, 1000);
+    tone(BUZZER_PIN, 1000);
     delay(50);
-    tone(BUZZER_INPUT, 1500);
+    tone(BUZZER_PIN, 1500);
     delay(50);
-    tone(BUZZER_INPUT, 2000);
+    tone(BUZZER_PIN, 2000);
     delay(50);
-    noTone(BUZZER_INPUT);
+    noTone(BUZZER_PIN);
+  }
+
+  if (current_time - state_timer > 500) {
+    state_timer = millis();
+    refresh_states();
+    led_state = !led_state;
+    digitalWrite(LED_BUILTIN, led_state);
   }
 
   if (game_started) game_logic();

@@ -11,6 +11,7 @@
 #define MODULE_TYPE 0x01
 
 // UNKNOWN
+int requested_id = 0xFF;
 int requested_command = 0xFF;
 
 void handle_command() {
@@ -24,13 +25,17 @@ void handle_command() {
 }
 
 void on_data_request() {
+  if (requested_id != MODULE_ID) return;
+
   Serial.print("Handling command ");
   Serial.println(requested_command, HEX);
   handle_command();
+
+  requested_id = 0xFF;
 }
 
 void on_command_receive(int numBytes) {
-  int id = Wire.read();
+  requested_id = Wire.read();
 
   Serial.print("Received command packet for ");
   Serial.println(id, HEX);

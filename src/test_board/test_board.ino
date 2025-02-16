@@ -40,7 +40,7 @@ void on_command_receive(int numBytes) {
   requested_command = Wire.read();
 
   Serial.print("Received command ");
-  Serial.println(command, HEX);
+  Serial.println(requested_command, HEX);
 }
 
 void setup() {

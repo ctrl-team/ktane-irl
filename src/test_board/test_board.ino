@@ -38,9 +38,9 @@ void on_command_receive(int numBytes) {
   requested_id = Wire.read();
 
   Serial.print("Received command packet for ");
-  Serial.println(id, HEX);
+  Serial.println(requested_id, HEX);
 
-  if (id != MODULE_ID) return;
+  if (requested_id != MODULE_ID) return;
 
   requested_command = Wire.read();
 

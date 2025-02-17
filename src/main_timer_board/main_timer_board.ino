@@ -434,7 +434,7 @@ void loop() {
     noTone(BUZZER_PIN);
   }
 
-  if (current_time - state_timer > 500) {
+  if (current_time - state_timer > 100) {
     state_timer = millis();
     refresh_states();
 

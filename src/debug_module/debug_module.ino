@@ -19,7 +19,7 @@ enum Module_state {
   SOLVED = 0x03,
   PAUSED = 0x04,
   NOT_STARTED = 0x05,
-  STATE_UNKOWN = 0xFF
+  STATE_UNKOWN = 0xF
 };
 
 // UNKNOWN
@@ -43,13 +43,14 @@ void handle_command() {
     case 0x04:
       Wire.write(MODULE_TYPE);
       break;
+    default:
+      Wire.write(0xF);
   }
 
   requested_command = 0xFF;
 }
 
 void on_data_request() {
-  Serial.print("Handling command 0x");
   Serial.println(requested_command, HEX);
   handle_command();
 }
@@ -74,6 +75,9 @@ void on_command_receive(int numBytes) {
     timer = received_data;
     received_data = 0x00;
     requested_command = 0xF;
+
+    Serial.print("New timer: ");
+    Serial.println(timer);
   }
 }
 

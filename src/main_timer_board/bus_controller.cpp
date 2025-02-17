@@ -11,7 +11,7 @@ uint8_t receive_byte(uint8_t target_address) {
     if (millis() - start_time > 80) {
       Serial.print("Timeout waiting for response from 0x");
       Serial.println(target_address, HEX);
-      return 0xFF;
+      return 0xF;
     }
     delay(1); // allow CPU time for other tasks
   }

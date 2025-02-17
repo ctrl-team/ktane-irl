@@ -16,14 +16,14 @@ enum Module_state {
   SOLVED = 0x03,
   PAUSED = 0x04,
   NOT_STARTED = 0x05,
-  STATE_UNKOWN = 0xFF
+  STATE_UNKOWN = 0xF
 };
 
 // UNKNOWN
 uint8_t requested_command = 0xF;
 uint16_t received_data = 0x00;
 
-int timer = 0;
+uint16_t timer = 0;
 
 Module_state MODULE_STATE = NOT_STARTED;
 
@@ -37,7 +37,7 @@ void handle_command() {
       break;
   }
 
-  requested_command = 0xFF;
+  requested_command = 0xF;
 }
 
 void on_data_request() {
@@ -66,6 +66,9 @@ void on_command_receive(int numBytes) {
     timer = received_data;
     received_data = 0x00;
     requested_command = 0xF;
+
+    Serial.print("New timer: ");
+    Serial.println(timer);
   }
 }
 

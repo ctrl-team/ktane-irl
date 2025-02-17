@@ -31,8 +31,9 @@ struct Module {
 extern Module modules[END_ADDRESS];
 
 uint8_t receive_byte(uint8_t target_address);
-bool send_request(uint8_t target_address, uint8_t command);
-bool send_request(uint8_t target_address, uint8_t command, uint16_t data);
+bool send_packet(uint8_t target_address, uint8_t command);
+bool send_packet(uint8_t target_address, uint8_t command, uint16_t data);
+void broadcast_packet(uint8_t command, uint16_t data);
 Module_type who_are_you(uint8_t target_address);
 Module_state get_state(uint8_t target_address);
 void refresh_states();

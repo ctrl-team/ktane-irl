@@ -19,7 +19,7 @@ uint8_t receive_byte(uint8_t target_address) {
   return Wire.read();
 }
 
-bool send_request(uint8_t target_address, uint8_t command) {
+bool send_packet(uint8_t target_address, uint8_t command) {
   Wire.beginTransmission(target_address);
   Wire.write(command);
 
@@ -30,16 +30,18 @@ bool send_request(uint8_t target_address, uint8_t command) {
     Serial.print(" request to address 0x");
     Serial.println(target_address, HEX);
     return false;
-  } else
-    return true;
+  }
+
+  return true;
 }
 
-bool send_request(uint8_t target_address, uint8_t command, uint16_t data) {
+bool send_packet(uint8_t target_address, uint8_t command, uint16_t data) {
   Wire.beginTransmission(target_address);
   Wire.write(command);
   Wire.write((uint8_t)(data >> 8)); // high byte
   Wire.write((uint8_t)(data & 0xFF)); // low byte
 
+  // non-zero means error
   if (Wire.endTransmission() != 0) {
     Serial.print("Failed to send 0x");
     Serial.print(command, HEX);
@@ -49,21 +51,26 @@ bool send_request(uint8_t target_address, uint8_t command, uint16_t data) {
     Serial.println(target_address, HEX);
     return false;
   }
+
   return true;
 }
 
+void broadcast_packet(uint8_t command, uint16_t data) {
+  for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
+    send_packet(module, command, data);
+  }
+}
+
 Module_type who_are_you(uint8_t target_address) {
-  if (send_request(target_address, 0x04))
+  if (send_packet(target_address, 0x04))
     return static_cast<Module_type>(receive_byte(target_address));
-  else
-    return MODULE_UNKNOWN;
+  return MODULE_UNKNOWN;
 }
 
 Module_state get_state(uint8_t target_address) {
-  if (send_request(target_address, 0x02))
+  if (send_packet(target_address, 0x02))
     return static_cast<Module_state>(receive_byte(target_address));
-  else
-    return STATE_UNKOWN;
+  return STATE_UNKOWN;
 }
 
 void refresh_states() {

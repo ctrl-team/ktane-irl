@@ -59,7 +59,7 @@ bool enter_pressed = false;
 bool back_pressed = false;
 bool led_state = false;
 
-bool game_started = false;
+bool game_started = true;
 bool just_started = false;
 int streak = 0;
 uint16_t timer = 0; // just enough time for 18 hours gameplay
@@ -338,7 +338,7 @@ void game_logic() {
   if (opened_menu == NONE && current_time - interval_time >= 1000) {
     timer--;
 
-    broadcast_data(0x03, timer);
+    broadcast_packet(0x03, timer);
 
     interval_time = millis();
     rerender_content = true;

@@ -4,6 +4,10 @@
 #define SDA_PIN 0
 #define SCL_PIN 1
 
+#define R_PIN 18
+#define G_PIN 19
+#define B_PIN 20
+
 // 0x08 - 0x16
 #define MODULE_ADDRESS 0x16
 
@@ -88,11 +92,37 @@ void setup() {
   Wire.onReceive(on_command_receive);
   Wire.onRequest(on_data_request);
 
+  pinMode(R_PIN, OUTPUT);
+  pinMode(G_PIN, OUTPUT);
+  pinMode(B_PIN, OUTPUT);
+
+  analogWrite(R_PIN, 0);
+  analogWrite(G_PIN, 0);
+  analogWrite(B_PIN, 0);
+
   Serial.print("Module 0x");
   Serial.print(MODULE_ADDRESS, HEX);
   Serial.println(" initialized");
 }
 
 void loop() {
-  delay(100);
+  switch (MODULE_STATE) {
+    case STREAK:
+      analogWrite(R_PIN, 255);
+      analogWrite(G_PIN, 0);
+      analogWrite(B_PIN, 0);
+      break;
+    case SOLVED:
+      analogWrite(R_PIN, 0);
+      analogWrite(G_PIN, 255);
+      analogWrite(B_PIN, 0);
+      break;
+    default:
+      analogWrite(R_PIN, 0);
+      analogWrite(G_PIN, 0);
+      analogWrite(B_PIN, 0);
+      break;
+  }
+
+  delay(10);
 }

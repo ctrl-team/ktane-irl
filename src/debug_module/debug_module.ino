@@ -4,6 +4,11 @@
 #define SOLVE_PIN 16
 #define STREAK_PIN 17
 
+// common-anode RGB LED
+#define R_PIN 18
+#define G_PIN 19
+#define B_PIN 20
+
 #define SDA_PIN 0
 #define SCL_PIN 1
 
@@ -99,6 +104,13 @@ void setup() {
 
   pinMode(SOLVE_PIN, INPUT_PULLUP);
   pinMode(STREAK_PIN, INPUT_PULLUP);
+  pinMode(R_PIN, OUTPUT);
+  pinMode(G_PIN, OUTPUT);
+  pinMode(B_PIN, OUTPUT);
+
+  analogWrite(R_PIN, 0);
+  analogWrite(G_PIN, 0);
+  analogWrite(B_PIN, 0);
 
   Serial.print("Module 0x");
   Serial.print(MODULE_ADDRESS, HEX);
@@ -108,6 +120,19 @@ void setup() {
 void loop() {
   bool solve_state = digitalRead(SOLVE_PIN) == LOW;
   bool streak_state = digitalRead(STREAK_PIN) == LOW;
+
+  switch (MODULE_STATE) {
+    case SOLVED:
+      analogWrite(R_PIN, 255);
+      analogWrite(G_PIN, 0);
+      analogWrite(B_PIN, 255);
+      break;
+    default:
+      analogWrite(R_PIN, 255);
+      analogWrite(G_PIN, 255);
+      analogWrite(B_PIN, 255);
+      break;
+  }
 
   if (solve_state && !solve_pressed) {
     MODULE_STATE = SOLVED;
@@ -121,6 +146,9 @@ void loop() {
   streak_pressed = streak_state;
 
   while (MODULE_STATE == STREAK) {
+    analogWrite(R_PIN, 0);
+    analogWrite(G_PIN, 255);
+    analogWrite(B_PIN, 255);
     delay(50);
   }
 }

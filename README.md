@@ -34,6 +34,7 @@ This project is licensed under GNU General Public License v3.0. See the LICENSE 
 
 ## Acknowledgments
 - [TFT_eSPI by Bodmer](https://github.com/Bodmer/TFT_eSPI)
+- [RPI Pico Schematic and footprint by ncarandini](https://github.com/ncarandini/KiCad-RP-Pico)
 
 ## Contributing
 Feel free to submit pull requests or open issues for bug reports and feature requests.

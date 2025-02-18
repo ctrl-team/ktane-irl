@@ -439,8 +439,11 @@ void loop() {
     refresh_states();
 
     for (Module module : modules) {
-      if (module.state == STREAK)
+      if (module.state == STREAK) {
         streak++;
+        tone(BUZZER_PIN, 1500, 100);
+        break;
+      }
     }
 
     Serial.print("[lo] streak: ");

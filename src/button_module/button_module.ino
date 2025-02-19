@@ -1,8 +1,8 @@
 #define BUTTON_PIN 15  // Button connected to GPIO15
-#define HOLD_TIME 1000  // Hold time in milliseconds (2 seconds)
+#define HOLD_TIME 1000  // Hold time in milliseconds
 
 void setup() {
-    pinMode(BUTTON_PIN, INPUT_PULLUP);  // Enable internal pull-down resistor
+    pinMode(BUTTON_PIN, INPUT_PULLUP);  // Enable internal pull-up resistor
     Serial.begin(115200);  // Start serial communication
 }
 

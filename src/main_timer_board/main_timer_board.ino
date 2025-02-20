@@ -59,7 +59,7 @@ bool enterPressed = false;
 bool backPressed = false;
 bool ledState = false;
 
-bool gameStarted = true;
+bool gameStarted = false;
 bool justStarted = false;
 int strike = 0;
 uint16_t timer = 120; // just enough time for 18 hours gameplay

@@ -145,7 +145,7 @@ void onCommandReceive(int numBytes) {
   }
 
   if (requestedCommand == 0x1) {
-    if (MODULE_STATE == SOLVED && receivedData != NOT_STARTED) return;
+    if (MODULE_STATE == SOLVED && (receivedData != NOT_STARTED || )) return;
 
     MODULE_STATE = static_cast<ModuleState>(receivedData);
     receivedData = 0x0;
@@ -194,6 +194,15 @@ void setup() {
   Serial.print("Module 0x");
   Serial.print(MODULE_ADDRESS, HEX);
   Serial.println(" initialized");
+
+  Serial.print("Button color: ");
+  Serial.println(buttonColor);
+
+  Serial.print("Button label: ");
+  Serial.println(buttonLabel);
+
+  Serial.print("Strip color: ");
+  Serial.println(stripColor);
 }
 
 void loop() {
@@ -228,10 +237,6 @@ void handleButton() {
       pressTime = currentTime;
       lastHoldCheck = currentTime;
       Serial.println("Button pressed!");
-      
-      if (!shouldPressAndRelease()) {
-        handleHoldingSequence();
-      }
     }
   }
   
@@ -248,6 +253,7 @@ void handleButton() {
         MODULE_STATE = STRIKE;
         buttonPressed = false;  // Reset button state after strike
       } else if (!shouldPressAndRelease() && !isHolding && duration >= HOLD_TIME) {
+        handleHoldingSequence();
         isHolding = true;
         Serial.println("Hold threshold reached");
       }
@@ -296,6 +302,8 @@ void processButtonRelease() {
       MODULE_STATE = STRIKE;
     }
   }
+
+  setStripColor(LOW, LOW, LOW);
 }
 
 void handleHoldingSequence() {

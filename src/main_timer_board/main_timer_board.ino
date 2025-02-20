@@ -277,6 +277,7 @@ void handleButtons() {
             delay(900);
           } else {
             timer = 0;
+            broadcastPacket(0x1, NOT_STARTED);
           }
           break;
         case 1:
@@ -310,6 +311,7 @@ void handleButtons() {
     tone(BUZZER_PIN, 1000, 50);
 
     if (openedMenu == MAIN_MENU && gameStarted) {
+      broadcastPacket(0x1, PLAYING);
       openedMenu = NONE;
       rerender = true;
     } else if (openedMenu == SETTINGS || openedMenu == INFORMATION) {

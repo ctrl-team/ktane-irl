@@ -1,20 +1,3 @@
-/******************************************************************************
- * @file        main_timer_board.ino
- * @brief       Main timer board logic for the game on RP2040
- *
- * @details     This file contains the core timer functionality for the game, 
- *              including timing events, display updates, and game logic. 
- *              It interfaces with the Waveshare 1.8" SPI TFT LCD (ST7735S) 
- *              using the TFT_eSPI library.
- *
- * IMPORTANT:  
- *  - This project uses the **Waveshare 2.4" SPI TFT LCD (ILI9341)**.
- *  - The correct display driver (**ILI9341**) must be selected.
- *  - The **Setup304_RP2040_ILI9341_Waveshare_2_4.h** file is provided in the same directory.
- *  - Ensure that **User_Setup_Select.h** in the TFT_eSPI library is configured 
- *    to include this setup file instead of modifying the library directly.
- ******************************************************************************/
-
 #include "Arduino.h"
 #include <TFT_eSPI.h>
 #include <SPI.h>
@@ -29,7 +12,10 @@
 #define BOTTOM_BUTTON 19
 #define ENTER_BUTTON 20
 #define BACK_BUTTON 21
-#define BUZZER_PIN 2
+
+#define BUZZER_PIN 2 // Buzzer + pin
+
+// I2C BUS Pins
 #define SDA_PIN 0
 #define SCL_PIN 1
 

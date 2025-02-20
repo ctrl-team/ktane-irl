@@ -9,7 +9,7 @@
 
 enum Module_state {
   PLAYING = 0x01,
-  STREAK = 0x02,
+  STRIKE = 0x02,
   SOLVED = 0x03,
   PAUSED = 0x04,
   NOT_STARTED = 0x05,

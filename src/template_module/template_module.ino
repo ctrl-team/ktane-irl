@@ -16,7 +16,7 @@
 
 enum Module_state {
   PLAYING = 0x01,
-  STREAK = 0x02,
+  STRIKE = 0x02,
   SOLVED = 0x03,
   PAUSED = 0x04,
   NOT_STARTED = 0x05,
@@ -107,7 +107,7 @@ void setup() {
 
 void loop() {
   switch (MODULE_STATE) {
-    case STREAK:
+    case STRIKE:
       analogWrite(R_PIN, 255);
       analogWrite(G_PIN, 0);
       analogWrite(B_PIN, 0);

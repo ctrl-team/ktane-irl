@@ -61,7 +61,7 @@ bool led_state = false;
 
 bool game_started = true;
 bool just_started = false;
-int streak = 0;
+int strike = 0;
 uint16_t timer = 0; // just enough time for 18 hours gameplay
 uint16_t default_timer = 10;
 int left_padding = 2;
@@ -439,15 +439,15 @@ void loop() {
     refresh_states();
 
     for (Module module : modules) {
-      if (module.state == STREAK) {
-        streak++;
+      if (module.state == STRIKE) {
+        strike++;
         tone(BUZZER_PIN, 1500, 100);
         break;
       }
     }
 
-    Serial.print("[lo] streak: ");
-    Serial.println(streak);
+    Serial.print("[lo] strike: ");
+    Serial.println(strike);
 
     led_state = !led_state;
     digitalWrite(LED_BUILTIN, led_state);

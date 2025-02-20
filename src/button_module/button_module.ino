@@ -26,7 +26,7 @@
 
 enum Module_state {
   PLAYING = 0x1,
-  STREAK = 0x2,
+  STRIKE = 0x2,
   SOLVED = 0x3,
   PAUSED = 0x4,
   NOT_STARTED = 0x5,
@@ -120,7 +120,7 @@ void handleCommand() {
   switch (requestedCommand) {
     case 0x2:
       Wire.write(MODULE_STATE);
-      if (MODULE_STATE == STREAK)
+      if (MODULE_STATE == STRIKE)
         MODULE_STATE = PLAYING;
       break;
     case 0x4:
@@ -202,12 +202,12 @@ void loop() {
     case SOLVED:
       setStateColor(LOW, HIGH, LOW);
       break;
-    case STREAK:
+    case STRIKE:
       setStateColor(HIGH, LOW, LOW);
       break;
     }
 
-    while (MODULE_STATE == STREAK) {
+    while (MODULE_STATE == STRIKE) {
       delay(500);
     }
 }
@@ -241,7 +241,7 @@ void handleButton() {
       
       if (shouldPressAndRelease() && duration >= HOLD_TIME) {
         Serial.println("Strike! Held when should have been quick press");
-        MODULE_STATE = STREAK;
+        MODULE_STATE = STRIKE;
         buttonPressed = false;  // Reset button state after strike
       } else if (!shouldPressAndRelease() && !isHolding && duration >= HOLD_TIME) {
         isHolding = true;
@@ -261,4 +261,3 @@ void handleButton() {
 
   previousButtonState = currentButtonState;
 }
-

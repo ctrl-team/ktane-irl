@@ -2,7 +2,7 @@
 #include <Wire.h>
 
 #define SOLVE_PIN 16
-#define STREAK_PIN 17
+#define STRIKE_PIN 17
 
 // common-anode RGB LED
 #define R_PIN 18
@@ -20,7 +20,7 @@
 
 enum Module_state {
   PLAYING = 0x01,
-  STREAK = 0x02,
+  STRIKE = 0x02,
   SOLVED = 0x03,
   PAUSED = 0x04,
   NOT_STARTED = 0x05,
@@ -34,7 +34,7 @@ uint16_t received_data = 0x00;
 int timer = 0;
 
 bool solve_pressed = true;
-bool streak_pressed = true;
+bool strike_pressed = true;
 
 Module_state MODULE_STATE = NOT_STARTED;
 
@@ -42,7 +42,7 @@ void handle_command() {
   switch (requested_command) {
     case 0x02:
       Wire.write(MODULE_STATE);
-      if (MODULE_STATE == STREAK)
+      if (MODULE_STATE == STRIKE)
         MODULE_STATE = PLAYING;
       break;
     case 0x04:
@@ -103,7 +103,7 @@ void setup() {
   Wire.onRequest(on_data_request);
 
   pinMode(SOLVE_PIN, INPUT_PULLUP);
-  pinMode(STREAK_PIN, INPUT_PULLUP);
+  pinMode(STRIKE_PIN, INPUT_PULLUP);
   pinMode(R_PIN, OUTPUT);
   pinMode(G_PIN, OUTPUT);
   pinMode(B_PIN, OUTPUT);
@@ -119,7 +119,7 @@ void setup() {
 
 void loop() {
   bool solve_state = digitalRead(SOLVE_PIN) == LOW;
-  bool streak_state = digitalRead(STREAK_PIN) == LOW;
+  bool strike_state = digitalRead(STRIKE_PIN) == LOW;
 
   switch (MODULE_STATE) {
     case SOLVED:
@@ -138,14 +138,14 @@ void loop() {
     MODULE_STATE = SOLVED;
   } 
   
-  if (streak_state && !streak_pressed) {
-    MODULE_STATE = STREAK;
+  if (strike_state && !strike_pressed) {
+    MODULE_STATE = STRIKE;
   }
 
   solve_pressed = solve_state;
-  streak_pressed = streak_state;
+  strike_pressed = strike_state;
 
-  while (MODULE_STATE == STREAK) {
+  while (MODULE_STATE == STRIKE) {
     analogWrite(R_PIN, 0);
     analogWrite(G_PIN, 255);
     analogWrite(B_PIN, 255);

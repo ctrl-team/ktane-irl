@@ -261,3 +261,64 @@ void handleButton() {
 
   previousButtonState = currentButtonState;
 }
+
+void processButtonRelease() {
+  if (shouldPressAndRelease()) {
+    if (duration < HOLD_TIME) {
+      Serial.println("Module solved! Correct quick press.");
+      MODULE_STATE = SOLVED;
+    }
+  } else {
+    if (duration >= HOLD_TIME) {
+      bool correctRelease = false;
+      
+      if (stripColor == BLUE) {
+        correctRelease = hasDigitInTimer(4);
+      } else if (stripColor == YELLOW) {
+        correctRelease = hasDigitInTimer(5);
+      } else {
+        correctRelease = hasDigitInTimer(1);
+      }
+      
+      if (correctRelease) {
+        Serial.println("Module solved! Correct hold and release.");
+        MODULE_STATE = SOLVED;
+      } else {
+        Serial.println("Strike! Released on wrong number.");
+        MODULE_STATE = STRIKE;
+      }
+    } else {
+      Serial.println("Strike! Button wasn't held long enough.");
+      MODULE_STATE = STRIKE;
+    }
+  }
+}
+
+void handleHoldingSequence() {
+  switch (colorChoice) {
+    case BLUE:
+      setStripColor(LOW, LOW, HIGH);
+      break;
+    case WHITE:
+      setStripColor(HIGH, HIGH, HIGH);
+      break;
+    case YELLOW:
+      setStripColor(HIGH, HIGH, LOW);
+      break;
+    case RED:
+      setStripColor(HIGH, LOW, LOW);
+      break;
+    case GREEN:
+      setStripColor(LOW, HIGH, LOW);
+      break;
+    case MAGENTA:
+      setStripColor(HIGH, LOW, HIGH);
+      break;
+    case CYAN:
+      setStripColor(LOW, HIGH, HIGH);
+      break;
+  }
+
+  Serial.print("LED strip color: ");
+  Serial.println(stripColor);
+}

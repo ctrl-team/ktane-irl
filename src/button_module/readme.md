@@ -48,13 +48,33 @@ RGB LED (Common Anode):
 
 The module implements the following rules from the original game:
 
-1. If the button is blue and says "Abort", hold and release when any timer digit shows 4
-2. If there is more than 1 battery and button says "Detonate", press and immediately release
-3. If the button is white and there is a lit CAR indicator, hold and release when any timer digit shows 1
-4. If there are more than 2 batteries and there is a lit FRK indicator, press and immediately release
-5. If the button is yellow, hold and release when any timer digit shows 5
-6. If the button is red and says "Hold", press and immediately release
-7. For all other cases, hold and release when any timer digit shows 1
+### Follow these rules in the order they are listed. Perform the first action that applies:
+
+1. If the button is $${\color{#1589F0}Blue}$$ and the button says **"Abort"**, hold the button and refer
+to "Releasing a Held Button".
+2. If there is **more than 1 battery** on the bomb and the button says **"Detonate"**,
+press and immediately release the button.
+3. If the button is $${\color{#FFFFFF}White}$$ and there is a **lit indicator with label CAR**, hold the
+button and refer to "Releasing a Held Button".
+4. If there are **more than 2 batteries** on the bomb and there is a **lit indicator
+with label FRK**, press and immediately release the button.
+5. If the button is $${\color{#FFCC00}Yellow}$$, hold the button and refer to "Releasing a Held
+Button".
+6. If the button is $${\color{#FF0000}Red}$$ and the button says **"Hold"**, press and immediately
+release the button.
+7. If none of the above apply, hold the button and refer to "Releasing a Held
+Button".
+
+### Releasing a Held Button
+
+If you start holding the button down, a colored strip will light up on the right
+side of the module. Based on its color, you must release the button at a specific
+point in time:
+- $${\color{#1589F0}Blue}$$ strip: release when the countdown timer has a 4 in any position.
+- $${\color{#FFFFFF}White}$$ strip: release when the countdown timer has a 1 in any position.
+- $${\color{#FFCC00}Yellow}$$ strip: release when the countdown timer has a 5 in any position.
+- Any other color strip: release when the countdown timer has a 1 in any
+position.
 
 ## Configuration Variables
 

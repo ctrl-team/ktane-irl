@@ -1,82 +1,220 @@
+#include <Arduino.h>
+#include <Wire.h>
+
+#define RGB_COMMON_ANODE // affects all diodes
+
 #define BUTTON_PIN 15  // Button connected to GPIO15
-#define HOLD_TIME 1000  // Hold time in milliseconds 
+#define HOLD_TIME 1500  // Hold time in milliseconds 
 #define DEBOUNCE_DELAY 50  // Debounce delay in milliseconds
 
-// RGB LED Pins
-#define RED_PIN 16
-#define GREEN_PIN 17
-#define BLUE_PIN 18
+// RGB STATE LED Pins
+#define STATE_RED_PIN 19
+#define STATE_GREEN_PIN 20
+#define STATE_BLUE_PIN 21
 
-unsigned long lastPressTime = 0;  // Time of last button press
-unsigned long pressTime = 0;  // Time the button was pressed
-unsigned long lastHoldCheck = 0;  // Time of last hold check
-unsigned long duration = 0;  // Duration of the press
+// RGB STRIP LED Pins
+#define STRIP_RED_PIN 16
+#define STRIP_GREEN_PIN 17
+#define STRIP_BLUE_PIN 18
+
+// I2C BUS Pins
+#define SDA_PIN 0
+#define SCL_PIN 1
+
+#define MODULE_ADDRESS 0x8 // 0x8 - 0x16
+#define MODULE_TYPE 0x2 // BUTTON_MODULE
+
+enum Module_state {
+  PLAYING = 0x1,
+  STREAK = 0x2,
+  SOLVED = 0x3,
+  PAUSED = 0x4,
+  NOT_STARTED = 0x5,
+  STATE_UNKNOWN = 0xF
+};
+
+enum ButtonLabel {
+  ABORT = 1,
+  DETONATE = 2,
+  HOLD = 3
+};
+
+enum Color {
+	BLUE = 0,
+	WHITE = 1,
+	YELLOW = 2,
+	RED = 3,
+	GREEN = 4,
+	MAGENTA = 5,
+	CYAN = 6
+}
+
+uint8_t requestedCommand = 0xF;
+uint16_t receivedData = 0x00;
+
+ModuleState MODULE_STATE = NOT_STARTED;
+
+uint16_t lastPressTime = 0;  // Time of last button press
+uint16_t pressTime = 0;  // Time the button was pressed
+uint16_t lastHoldCheck = 0;  // Time of last hold check
+uint16_t duration = 0;  // Duration of the press
 
 // Example mock values (replace with actual logic to read these values)
 bool hasBatteryMoreThan1 = false;  // More than 1 battery on the bomb
 bool hasBatteryMoreThan2 = false;  // More than 2 batteries
 bool litCARIndicator = true;  // Lit CAR indicator
 bool litFRKIndicator = true;  // Lit FRK indicator
-String buttonLabel = "Abort";  // Button label ("Abort", "Detonate", etc.)
-String buttonColor = "Blue";  // Button color ("Blue", "White", "Yellow", "Red")
+ButtonLabel buttonLabel = ABORT;  // Button label ("Abort", "Detonate", etc.)
+Color buttonColor = BLUE;  // Button color ("Blue", "White", "Yellow", "Red")
+Color stripColor = random(1, 5);
 
 // Timer variables
-int minutes = 5;  // Starting minutes
-int seconds = 0;  // Starting seconds
-unsigned long lastTimerUpdate = 0;
-bool moduleActive = true;  // Module is still active (not solved)
+uint16_t timer = 0;
 
 // Variables to track button state
 bool buttonPressed = false;
 bool previousButtonState = HIGH;
 bool isHolding = false;  // Track if button is being held
 
-// Variable to store the current LED strip color
-String currentLEDColor = "";
+void setLEDColor(int redPin, int greenPin, int bluePin, int red, int green, int blue) {
+  #ifdef RGB_COMMON_ANODE
+    digitalWrite(redPin, !red);
+    digitalWrite(greenPin, !green);
+    digitalWrite(bluePin, !blue);
+  #else
+    digitalWrite(redPin, red);
+    digitalWrite(greenPin, green);
+    digitalWrite(bluePin, blue);
+  #endif
+}
+
+void setStateColor(int red, int green, int blue) {
+	setLEDColor(STATE_RED_PIN, red);
+	setLEDColor(STATE_GREEN_PIN, green);
+	setLEDColor(STATE_BLUE_PIN, blue);
+}
+
+void setStripColor(int red, int green, int blue) {
+	setLEDColor(STRIP_RED_PIN, red);
+	setLEDColor(STRIP_GREEN_PIN, green);
+	setLEDColor(STRIP_BLUE_PIN, blue);
+}
+
+bool hasDigitInTimer(int digit) {
+  int mins = timer / 60;
+  int secs = timer % 60;
+  
+  return (secs % 10 == digit) || 
+         ((secs / 10) % 10 == digit) || 
+         (mins % 10 == digit) || 
+         ((mins / 10) % 10 == digit);
+}
+
+bool shouldPressAndRelease() {
+  return (hasBatteryMoreThan1 && buttonLabel == DETONATE) ||
+         (hasBatteryMoreThan2 && litFRKIndicator) ||
+         (buttonColor == RED && buttonLabel == HOLD);
+}
+
+void handleCommand() {
+	switch (requestedCommand) {
+		case 0x2:
+			Wire.write(MODULE_STATE);
+			if (MODULE_STATE == STREAK)
+				MODULE_STATE = PLAYING;
+			break;
+		case 0x4:
+			Wire.write(MODULE_TYPE);
+			break;
+		default:
+			Wire.write(0xF);
+	}
+
+	requestedCommand = 0xF;
+}
+
+void onDataRequest() {
+	handleCommand();
+}
+
+void onCommandReceive(int numBytes) {
+	requestedCommand = Wire.read();
+
+	receivedData = 0;
+
+	if (numBytes == 3) {
+		uint8_t highByte = Wire.read();
+		uint8_t lowByte = Wire.read();
+		receivedData = (highByte << 8) | lowByte;
+	}
+	
+	if (requestedCommand == 0x3) {
+		timer = receivedData;
+		receivedData = 0x0;
+		requestedCommand = 0xF;
+
+		char buffer[6];
+		sprintf(buffer, "%02d:%02d", timer / 60, timer % 60);
+		
+		Serial.print("New time: ");
+		Serial.println(buffer);
+	}
+}
 
 void setup() {
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  pinMode(RED_PIN, OUTPUT);
-  pinMode(GREEN_PIN, OUTPUT);
-  pinMode(BLUE_PIN, OUTPUT);
-
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, HIGH);
+  delay(1000);
 
   Serial.begin(115200);
-  Serial.println("System initialized");
+  Serial.flush();
+
+  // set I2C pins for the controller
+  Wire.setSDA(SDA_PIN);
+  Wire.setSCL(SCL_PIN);
+
+  Wire.begin(MODULE_ADDRESS);
+
+	Wire.onReceive(onCommandReceive);
+	Wire.onRequest(onDataRequest);
+
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(STATE_RED_PIN, OUTPUT);
+  pinMode(STATE_GREEN_PIN, OUTPUT);
+  pinMode(STATE_BLUE_PIN, OUTPUT);
+  pinMode(STRIP_RED_PIN, OUTPUT);
+  pinMode(STRIP_GREEN_PIN, OUTPUT);
+  pinMode(STRIP_BLUE_PIN, OUTPUT);
+
+	setStateColor(LOW, LOW, LOW);
+	setStripColor(LOW, LOW, LOW);
+
+  Serial.print("Module 0x");
+  Serial.print(MODULE_ADDRESS, HEX);
+  Serial.println(" initialized");
 }
 
 void loop() {
-  if (moduleActive) {
+  if (MODULE_STATE == PLAYING) {
     updateTimer();
     handleButton();
   }
-}
 
-void updateTimer() {
-  if (millis() - lastTimerUpdate >= 1000) {
-    lastTimerUpdate = millis();
-    
-    if (seconds > 0) {
-      seconds--;
-    } else if (minutes > 0) {
-      minutes--;
-      seconds = 59;
-    }
-    
-    Serial.print("Time remaining: ");
-    Serial.print(minutes);
-    Serial.print(":");
-    if (seconds < 10) Serial.print("0");
-    Serial.println(seconds);
-  }
+	switch (MODULE_STATE) {
+		case SOLVED:
+			setStateColor(LOW, HIGH, LOW);
+			break;
+		case STREAK:
+			setStateColor(HIGH, LOW, LOW);
+			break;
+		}
+
+		while (MODULE_STATE == STREAK) {
+			delay(500);
+		}
 }
 
 void handleButton() {
   bool currentButtonState = digitalRead(BUTTON_PIN);
-  unsigned long currentTime = millis();
+  uint16_t currentTime = millis();
 
   // Button press handling
   if (currentButtonState == LOW && previousButtonState == HIGH) {
@@ -103,7 +241,7 @@ void handleButton() {
       
       if (shouldPressAndRelease() && duration >= HOLD_TIME) {
         Serial.println("Strike! Held when should have been quick press");
-        moduleStrike();
+				MODULE_STATE = STREAK;
         buttonPressed = false;  // Reset button state after strike
       } else if (!shouldPressAndRelease() && !isHolding && duration >= HOLD_TIME) {
         isHolding = true;
@@ -124,103 +262,3 @@ void handleButton() {
   previousButtonState = currentButtonState;
 }
 
-bool shouldPressAndRelease() {
-  return (hasBatteryMoreThan1 && buttonLabel == "Detonate") ||
-         (hasBatteryMoreThan2 && litFRKIndicator) ||
-         (buttonColor == "Red" && buttonLabel == "Hold");
-}
-
-void handleHoldingSequence() {
-  // Randomly select a color for the LED strip
-  int colorChoice = random(0, 4);  // 0: Blue, 1: White, 2: Yellow, 3: Other
-
-  switch (colorChoice) {
-    case 0:
-      currentLEDColor = "Blue";
-      lightUpLED(HIGH, HIGH, LOW);  // Blue for common anode
-      break;
-    case 1:
-      currentLEDColor = "White";
-      lightUpLED(LOW, LOW, LOW);  // White for common anode
-      break;
-    case 2:
-      currentLEDColor = "Yellow";
-      lightUpLED(LOW, LOW, HIGH);  // Yellow for common anode
-      break;
-    default:
-      currentLEDColor = "Other";
-      lightUpLED(HIGH, LOW, HIGH);  // Green for common anode
-      break;
-  }
-
-  Serial.print("LED strip color: ");
-  Serial.println(currentLEDColor);
-}
-
-bool hasDigitInTimer(int digit) {
-  int mins = minutes;
-  int secs = seconds;
-  
-  return (secs % 10 == digit) || 
-         ((secs / 10) % 10 == digit) || 
-         (mins % 10 == digit) || 
-         ((mins / 10) % 10 == digit);
-}
-
-void processButtonRelease() {
-  if (shouldPressAndRelease()) {
-    if (duration < HOLD_TIME) {
-      Serial.println("Module solved! Correct quick press.");
-      moduleSolved();
-    }
-  } else {
-    if (duration >= HOLD_TIME) {
-      bool correctRelease = false;
-      
-      if (currentLEDColor == "Blue") {
-        correctRelease = hasDigitInTimer(4);
-      } else if (currentLEDColor == "White") {
-        correctRelease = hasDigitInTimer(1);
-      } else if (currentLEDColor == "Yellow") {
-        correctRelease = hasDigitInTimer(5);
-      } else {
-        correctRelease = hasDigitInTimer(1);
-      }
-      
-      if (correctRelease) {
-        Serial.println("Module solved! Correct hold and release.");
-        moduleSolved();
-      } else {
-        Serial.println("Strike! Released on wrong number.");
-        moduleStrike();
-      }
-    } else {
-      Serial.println("Strike! Button wasn't held long enough.");
-      moduleStrike();
-    }
-  }
-}
-
-void moduleSolved() {
-  moduleActive = false;
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, HIGH);
-  Serial.println("Module deactivated - SUCCESS!");
-}
-
-void moduleStrike() {
-  lightUpLED(LOW, HIGH, HIGH);  // Red for strike
-  delay(500);
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, HIGH);
-  Serial.println("STRIKE!");
-}
-
-void lightUpLED(int red, int green, int blue) {
-  digitalWrite(RED_PIN, red);
-  digitalWrite(GREEN_PIN, green);
-  digitalWrite(BLUE_PIN, blue);
-  Serial.println("LED color changed");
-}

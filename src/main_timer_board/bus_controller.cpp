@@ -2,7 +2,7 @@
 
 Module modules[END_ADDRESS];
 
-uint8_t receive_byte(uint8_t target_address) {
+uint8_t receiveByte(uint8_t target_address) {
   Wire.requestFrom(target_address, 1);
   
   unsigned long start_time = millis();
@@ -19,7 +19,7 @@ uint8_t receive_byte(uint8_t target_address) {
   return Wire.read();
 }
 
-bool send_packet(uint8_t target_address, uint8_t command) {
+bool sendPacket(uint8_t target_address, uint8_t command) {
   Wire.beginTransmission(target_address);
   Wire.write(command);
 
@@ -35,7 +35,7 @@ bool send_packet(uint8_t target_address, uint8_t command) {
   return true;
 }
 
-bool send_packet(uint8_t target_address, uint8_t command, uint16_t data) {
+bool sendPacket(uint8_t target_address, uint8_t command, uint16_t data) {
   Wire.beginTransmission(target_address);
   Wire.write(command);
   Wire.write((uint8_t)(data >> 8)); // high byte
@@ -55,30 +55,30 @@ bool send_packet(uint8_t target_address, uint8_t command, uint16_t data) {
   return true;
 }
 
-void broadcast_packet(uint8_t command, uint16_t data) {
+void broadcastPacket(uint8_t command, uint16_t data) {
   for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
-    send_packet(module, command, data);
+    sendPacket(module, command, data);
   }
 }
 
-Module_type who_are_you(uint8_t target_address) {
-  if (send_packet(target_address, 0x04))
-    return static_cast<Module_type>(receive_byte(target_address));
+ModuleType whoAreYou(uint8_t target_address) {
+  if (sendPacket(target_address, 0x04))
+    return static_cast<ModuleType>(receiveByte(target_address));
   return MODULE_UNKNOWN;
 }
 
-Module_state get_state(uint8_t target_address) {
-  if (send_packet(target_address, 0x02))
-    return static_cast<Module_state>(receive_byte(target_address));
-  return STATE_UNKOWN;
+ModuleState getState(uint8_t target_address) {
+  if (sendPacket(target_address, 0x02))
+    return static_cast<ModuleState>(receiveByte(target_address));
+  return STATE_UNKNOWN;
 }
 
-void refresh_states() {
+void refreshStates() {
   for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
     if (!modules[module].active) continue;
 
-    Module_state module_state = get_state(modules[module].id);
-    if (module_state == STATE_UNKOWN) continue;
+    ModuleState module_state = getState(modules[module].id);
+    if (module_state == STATE_UNKNOWN) continue;
 
     modules[module].state = module_state;
 
@@ -89,7 +89,7 @@ void refresh_states() {
   }
 }
 
-void initialize_devices() {
+void initializeDevices() {
   for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
     Serial.print("[id] Scanning address 0x");
     Serial.println(module, HEX);
@@ -98,14 +98,14 @@ void initialize_devices() {
     modules[module].type = MODULE_UNKNOWN;
     modules[module].active = false;
 
-    Module_type module_type = who_are_you(module);
+    ModuleType module_type = whoAreYou(module);
     if (module_type == MODULE_UNKNOWN) continue;
 
     modules[module].type = module_type;
     modules[module].active = true;
 
-    Module_state module_state = get_state(module);
-    if (module_state == STATE_UNKOWN) continue;
+    ModuleState module_state = getState(module);
+    if (module_state == STATE_UNKNOWN) continue;
 
     modules[module].state = module_state;
 
@@ -115,5 +115,5 @@ void initialize_devices() {
     Serial.println(module_type, HEX);
   }
 
-  refresh_states();
+  refreshStates();
 }

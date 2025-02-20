@@ -44,35 +44,35 @@ enum Menus {
 TFT_eSPI tft = TFT_eSPI();
 
 bool rerender = true;
-bool rerender_content = true;
-Menus opened_menu = MAIN_MENU;
-int selected_item = 0;
+bool rerenderContent = true;
+Menus openedMenu = MAIN_MENU;
+int selectedItem = 0;
 
 // timing variables
-int last_opened = 0;
-int interval_time = 0;
-int state_timer = 0;
+int lastOpened = 0;
+int intervalTime = 0;
+int stateTimer = 0;
 
-bool up_pressed = false;
-bool down_pressed = false;
-bool enter_pressed = false;
-bool back_pressed = false;
-bool led_state = false;
+bool upPressed = false;
+bool downPressed = false;
+bool enterPressed = false;
+bool backPressed = false;
+bool ledState = false;
 
-bool game_started = true;
-bool just_started = false;
+bool gameStarted = true;
+bool justStarted = false;
 int strike = 0;
-uint16_t timer = 0; // just enough time for 18 hours gameplay
-uint16_t default_timer = 10;
-int left_padding = 2;
+uint16_t timer = 120; // just enough time for 18 hours gameplay
+uint16_t defaultTimer = 300; // 5 minutes
+int leftPadding = 2;
 
-void render_top_bar() {
+void renderTopBar() {
   tft.fillRect(0, 0, LCD_WIDTH, 20, TFT_RED);
-  tft.setCursor(left_padding, 2, 2);
+  tft.setCursor(leftPadding, 2, 2);
   tft.setTextColor(TFT_WHITE);
   tft.setTextSize(1);
 
-  switch (opened_menu) {
+  switch (openedMenu) {
     case MAIN_MENU:
       tft.println("Main menu");
       break;
@@ -88,31 +88,31 @@ void render_top_bar() {
   }
 }
 
-void render_content() {
-  tft.setCursor(left_padding, 22, 2);
+void renderContent() {
+  tft.setCursor(leftPadding, 22, 2);
   tft.setTextSize(2);
 
-  switch (opened_menu) {
+  switch (openedMenu) {
     case MAIN_MENU:
-      tft.setTextColor(TFT_WHITE, selected_item == 0 ? TFT_DARKGREEN : TFT_BLACK);
-      tft.print(game_started ? "End game" : "Start game");
+      tft.setTextColor(TFT_WHITE, selectedItem == 0 ? TFT_DARKGREEN : TFT_BLACK);
+      tft.print(gameStarted ? "End game" : "Start game");
 
-      tft.setCursor(left_padding, 22 + tft.fontHeight() + 4, 2);  // 22 + top_bar, + 4 margin
-      tft.setTextColor(game_started ? TFT_DARKGREY : TFT_WHITE, selected_item == 1 ? TFT_DARKGREEN : TFT_BLACK);
+      tft.setCursor(leftPadding, 22 + tft.fontHeight() + 4, 2);  // 22 + top_bar, + 4 margin
+      tft.setTextColor(gameStarted ? TFT_DARKGREY : TFT_WHITE, selectedItem == 1 ? TFT_DARKGREEN : TFT_BLACK);
       tft.print("Settings");
 
-      tft.setCursor(left_padding, 22 + tft.fontHeight() * 2 + 8, 2);  // 22 + top_bar, + 4 margin (include last one)
-      tft.setTextColor(game_started ? TFT_DARKGREY : TFT_WHITE, selected_item == 2 ? TFT_DARKGREEN : TFT_BLACK);
+      tft.setCursor(leftPadding, 22 + tft.fontHeight() * 2 + 8, 2);  // 22 + top_bar, + 4 margin (include last one)
+      tft.setTextColor(gameStarted ? TFT_DARKGREY : TFT_WHITE, selectedItem == 2 ? TFT_DARKGREEN : TFT_BLACK);
       tft.print("Information");
 
       break;
     case SETTINGS:
-      tft.setTextColor(TFT_WHITE, selected_item == 0 ? TFT_DARKGREEN : TFT_BLACK);
+      tft.setTextColor(TFT_WHITE, selectedItem == 0 ? TFT_DARKGREEN : TFT_BLACK);
       tft.print("Timer");
       break;
     case SETTINGS_TIMER:
       char buffer[6];
-      sprintf(buffer, "%02d:%02d", default_timer / 60, default_timer % 60);
+      sprintf(buffer, "%02d:%02d", defaultTimer / 60, defaultTimer % 60);
       tft.setTextColor(TFT_WHITE, TFT_BLACK);
       tft.setTextFont(6);
       tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth(buffer) / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
@@ -127,66 +127,66 @@ void render_content() {
   }
 }
 
-void render_bottom_bar() {
+void renderBottomBar() {
   tft.fillRect(0, LCD_HEIGHT - 20, LCD_WIDTH, LCD_HEIGHT, TFT_RED);
   tft.setTextFont(1);
   tft.setTextSize(1);
 
-  if (opened_menu == MAIN_MENU) {
-    switch (selected_item) {
+  if (openedMenu == MAIN_MENU) {
+    switch (selectedItem) {
       case 1:
-        tft.setCursor(left_padding, LCD_HEIGHT - 14);
+        tft.setCursor(leftPadding, LCD_HEIGHT - 14);
         tft.setTextColor(TFT_WHITE);
         tft.print("Change game behaviour");
         break;
       case 2:
-        tft.setCursor(left_padding, LCD_HEIGHT - 14);
+        tft.setCursor(leftPadding, LCD_HEIGHT - 14);
         tft.setTextColor(TFT_WHITE);
         tft.print("Display connected modules");
         break;
       default:
-        tft.setCursor(left_padding, LCD_HEIGHT - 14);
+        tft.setCursor(leftPadding, LCD_HEIGHT - 14);
         tft.setTextColor(TFT_WHITE);
         tft.print("F1-ENTER");
-        tft.setCursor(left_padding * 3 + tft.textWidth("F1-ENTER"), LCD_HEIGHT - 14);
-        tft.setTextColor(game_started ? TFT_WHITE : TFT_DARKGREY);
+        tft.setCursor(leftPadding * 3 + tft.textWidth("F1-ENTER"), LCD_HEIGHT - 14);
+        tft.setTextColor(gameStarted ? TFT_WHITE : TFT_DARKGREY);
         tft.print("F2-BACK");
         break;
     }
   }
 
-  if (opened_menu == SETTINGS) {
-    switch (selected_item) {
+  if (openedMenu == SETTINGS) {
+    switch (selectedItem) {
       default:
-        tft.setCursor(left_padding, LCD_HEIGHT - 14);
+        tft.setCursor(leftPadding, LCD_HEIGHT - 14);
         tft.setTextColor(TFT_WHITE);
         tft.print("F1-ENTER");
-        tft.setCursor(left_padding * 3 + tft.textWidth("F1-ENTER"), LCD_HEIGHT - 14);
+        tft.setCursor(leftPadding * 3 + tft.textWidth("F1-ENTER"), LCD_HEIGHT - 14);
         tft.print("F2-BACK");
         break;
     }
   }
 
-  if (opened_menu == SETTINGS_TIMER) {
-    tft.setCursor(left_padding, LCD_HEIGHT - 14);
+  if (openedMenu == SETTINGS_TIMER) {
+    tft.setCursor(leftPadding, LCD_HEIGHT - 14);
     tft.setTextColor(TFT_WHITE);
     tft.print("F1 <");
-    tft.setCursor(left_padding * 3 + tft.textWidth("F1 <"), LCD_HEIGHT - 14);
+    tft.setCursor(leftPadding * 3 + tft.textWidth("F1 <"), LCD_HEIGHT - 14);
     tft.print("F3 >");
-    tft.setCursor(left_padding * 5 + tft.textWidth("F1 <") + tft.textWidth("F2 >"), LCD_HEIGHT - 14);
+    tft.setCursor(leftPadding * 5 + tft.textWidth("F1 <") + tft.textWidth("F2 >"), LCD_HEIGHT - 14);
     tft.print("F2 - SAVE");
   }
 }
 
 void render() {
-  if (!rerender && !rerender_content) return;
+  if (!rerender && !rerenderContent) return;
 
   if (rerender) {
     tft.fillScreen(TFT_BLACK);
-    selected_item = 0;
+    selectedItem = 0;
   }
 
-  switch (opened_menu) {
+  switch (openedMenu) {
     case NONE:
       char buffer[6];
       sprintf(buffer, "%02d:%02d", timer / 60, timer % 60);
@@ -197,67 +197,67 @@ void render() {
       tft.print(buffer);
       break;
     default:
-      render_top_bar();
-      render_content();
-      render_bottom_bar();
+      renderTopBar();
+      renderContent();
+      renderBottomBar();
       break;
   }
 
   rerender = false;
-  rerender_content = false;
+  rerenderContent = false;
 }
 
-void handle_buttons() {
-  bool up_state = digitalRead(TOP_BUTTON) == LOW;
-  bool down_state = digitalRead(BOTTOM_BUTTON) == LOW;
-  bool enter_state = digitalRead(ENTER_BUTTON) == LOW;
-  bool back_state = digitalRead(BACK_BUTTON) == LOW;
+void handleButtons() {
+  bool upState = digitalRead(TOP_BUTTON) == LOW;
+  bool downState = digitalRead(BOTTOM_BUTTON) == LOW;
+  bool enterState = digitalRead(ENTER_BUTTON) == LOW;
+  bool backState = digitalRead(BACK_BUTTON) == LOW;
 
-  if(up_state && !up_pressed) {
+  if(upState && !upPressed) {
     tone(BUZZER_PIN, 1000);
     delay(50);
     noTone(BUZZER_PIN);
 
-    if (opened_menu == MAIN_MENU) {
-      selected_item = (selected_item == 0) ? 2 : selected_item - 1;
-      rerender_content = true;
-    } else if (opened_menu == SETTINGS_TIMER) {
-      if(default_timer > 0){
-        default_timer++;
+    if (openedMenu == MAIN_MENU) {
+      selectedItem = (selectedItem == 0) ? 2 : selectedItem - 1;
+      rerenderContent = true;
+    } else if (openedMenu == SETTINGS_TIMER) {
+      if(defaultTimer > 0){
+        defaultTimer++;
       }
-      rerender_content = true;
+      rerenderContent = true;
     }
   }
 
-  if (down_state && !down_pressed) {
+  if (downState && !downPressed) {
     tone(BUZZER_PIN, 1000, 50);
 
-    if (opened_menu == MAIN_MENU) {
-      selected_item = ++selected_item % 3;
-      rerender_content = true;
-    } else if (opened_menu == SETTINGS_TIMER) {
-      if(default_timer > 0){
-        default_timer--;
+    if (openedMenu == MAIN_MENU) {
+      selectedItem = ++selectedItem % 3;
+      rerenderContent = true;
+    } else if (openedMenu == SETTINGS_TIMER) {
+      if(defaultTimer > 0){
+        defaultTimer--;
       }
-      rerender_content = true;
+      rerenderContent = true;
     }
   }
 
-  if (enter_state && !enter_pressed) {
-    if (opened_menu != MAIN_MENU || (opened_menu == MAIN_MENU && (!game_started && selected_item != 0))) {
+  if (enterState && !enterPressed) {
+    if (openedMenu != MAIN_MENU || (openedMenu == MAIN_MENU && (!gameStarted && selectedItem != 0))) {
       tone(BUZZER_PIN, 1000, 50);
     }
 
-    if (opened_menu == MAIN_MENU) {
-      switch (selected_item) {
+    if (openedMenu == MAIN_MENU) {
+      switch (selectedItem) {
         case 0:
-          game_started = !game_started;
-          opened_menu = game_started ? NONE : MAIN_MENU;
+          gameStarted = !gameStarted;
+          openedMenu = gameStarted ? NONE : MAIN_MENU;
           rerender = true;
 
-          if (game_started) {
-            timer = default_timer;
-            just_started = true;
+          if (gameStarted) {
+            timer = defaultTimer;
+            justStarted = true;
 
             tft.setTextColor(TFT_WHITE, TFT_BLACK);
             tft.setTextFont(8);
@@ -280,68 +280,70 @@ void handle_buttons() {
           }
           break;
         case 1:
-          opened_menu = SETTINGS;
+          openedMenu = SETTINGS;
           rerender = true;
           break;
         case 2:
-          opened_menu = INFORMATION;
+          openedMenu = INFORMATION;
           rerender = true;
           break;
       }
-    } else if (opened_menu == SETTINGS) {
-      switch (selected_item) {
+    } else if (openedMenu == SETTINGS) {
+      switch (selectedItem) {
         case 0:
-          opened_menu = SETTINGS_TIMER;
+          openedMenu = SETTINGS_TIMER;
           rerender = true;
           break;
       }
-    } else if (opened_menu == NONE) {
-      opened_menu = MAIN_MENU;
+    } else if (openedMenu == NONE) {
+      broadcastPacket(0x1, PAUSED);
+      openedMenu = MAIN_MENU;
       rerender = true;
-      last_opened = millis();
-    } else if (opened_menu == SETTINGS_TIMER) {
-      opened_menu = SETTINGS;
+      lastOpened = millis();
+    } else if (openedMenu == SETTINGS_TIMER) {
+      openedMenu = SETTINGS;
       rerender = true;
     }
   }
 
-  if (back_state && !back_pressed) {
+  if (backState && !backPressed) {
     tone(BUZZER_PIN, 1000, 50);
 
-    if (opened_menu == MAIN_MENU && game_started) {
-      opened_menu = NONE;
+    if (openedMenu == MAIN_MENU && gameStarted) {
+      openedMenu = NONE;
       rerender = true;
-    } else if (opened_menu == SETTINGS || opened_menu == INFORMATION) {
-      opened_menu = MAIN_MENU;
+    } else if (openedMenu == SETTINGS || openedMenu == INFORMATION) {
+      openedMenu = MAIN_MENU;
       rerender = true;
-    } else if (opened_menu == SETTINGS_TIMER) {
-      default_timer++;
-      rerender_content = true;
+    } else if (openedMenu == SETTINGS_TIMER) {
+      defaultTimer++;
+      rerenderContent = true;
     }
   }
 
-  up_pressed = up_state;
-  down_pressed = down_state;
-  enter_pressed = enter_state;
-  back_pressed = back_state;
+  upPressed = upState;
+  downPressed = downState;
+  enterPressed = enterState;
+  backPressed = backState;
 }
 
-void game_logic() {
-  int current_time = millis();
+void gameLogic() {
+  int currentTime = millis();
 
-  if (opened_menu != NONE && current_time - last_opened >= 10000) {
-    last_opened = 0;
-    opened_menu = NONE;
+  if (openedMenu != NONE && currentTime - lastOpened >= 10000) {
+    broadcastPacket(0x1, PLAYING);
+    lastOpened = 0;
+    openedMenu = NONE;
     rerender = true;
   }
 
-  if (opened_menu == NONE && current_time - interval_time >= 1000) {
+  if (openedMenu == NONE && currentTime - intervalTime >= 1000) {
     timer--;
 
-    broadcast_packet(0x03, timer);
+    broadcastPacket(0x03, timer);
 
-    interval_time = millis();
-    rerender_content = true;
+    intervalTime = millis();
+    rerenderContent = true;
 
     if (timer <= 5) {
       tone(BUZZER_PIN, 1000 + 100 * (5 - timer), 50);
@@ -374,9 +376,9 @@ void game_logic() {
         delay(50);
       }
 
-      enter_pressed = true;
-      game_started = false;
-      opened_menu = MAIN_MENU;
+      enterPressed = true;
+      gameStarted = false;
+      openedMenu = MAIN_MENU;
       rerender = true;
     }
   }
@@ -405,7 +407,7 @@ void setup() {
 
   delay(2000);
 
-  initialize_devices();
+  initializeDevices();
 
   for (auto module : modules) {
     Serial.print("Module at address 0x");
@@ -418,12 +420,12 @@ void setup() {
 }
 
 void loop() {
-  int current_time = millis();
+  int currentTime = millis();
 
-  handle_buttons();
+  handleButtons();
 
-  if (just_started) {
-    just_started = false;
+  if (justStarted) {
+    justStarted = false;
 
     tone(BUZZER_PIN, 1000);
     delay(50);
@@ -432,16 +434,18 @@ void loop() {
     tone(BUZZER_PIN, 2000);
     delay(50);
     noTone(BUZZER_PIN);
+
+    broadcastPacket(0x1, PLAYING);
   }
 
-  if (current_time - state_timer > 100) {
-    state_timer = millis();
-    refresh_states();
+  if (currentTime - stateTimer > 100) {
+    stateTimer = millis();
+    refreshStates();
 
     for (Module module : modules) {
       if (module.state == STRIKE) {
         strike++;
-        tone(BUZZER_PIN, 1500, 100);
+        tone(BUZZER_PIN, 800, 500);
         break;
       }
     }
@@ -449,11 +453,11 @@ void loop() {
     Serial.print("[lo] strike: ");
     Serial.println(strike);
 
-    led_state = !led_state;
-    digitalWrite(LED_BUILTIN, led_state);
+    ledState = !ledState;
+    digitalWrite(LED_BUILTIN, ledState);
   }
 
-  if (game_started) game_logic();
+  if (gameStarted) gameLogic();
 
   render();
 }

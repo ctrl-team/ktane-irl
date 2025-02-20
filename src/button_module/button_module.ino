@@ -24,7 +24,7 @@
 #define MODULE_ADDRESS 0x8 // 0x8 - 0x16
 #define MODULE_TYPE 0x2 // BUTTON_MODULE
 
-enum Module_state {
+enum ModuleState {
   PLAYING = 0x1,
   STRIKE = 0x2,
   SOLVED = 0x3,
@@ -47,7 +47,7 @@ enum Color {
   GREEN = 4,
   MAGENTA = 5,
   CYAN = 6
-}
+};
 
 uint8_t requestedCommand = 0xF;
 uint16_t receivedData = 0x00;
@@ -66,7 +66,7 @@ bool litCARIndicator = true;  // Lit CAR indicator
 bool litFRKIndicator = true;  // Lit FRK indicator
 ButtonLabel buttonLabel = ABORT;  // Button label ("Abort", "Detonate", etc.)
 Color buttonColor = BLUE;  // Button color ("Blue", "White", "Yellow", "Red")
-Color stripColor = random(1, 5);
+Color stripColor = static_cast<Color>(random(1, 5));
 
 // Timer variables
 uint16_t timer = 0;
@@ -89,15 +89,11 @@ void setLEDColor(int redPin, int greenPin, int bluePin, int red, int green, int 
 }
 
 void setStateColor(int red, int green, int blue) {
-  setLEDColor(STATE_RED_PIN, red);
-  setLEDColor(STATE_GREEN_PIN, green);
-  setLEDColor(STATE_BLUE_PIN, blue);
+  setLEDColor(STATE_RED_PIN, STATE_GREEN_PIN, STATE_BLUE_PIN, red, green, blue);
 }
 
 void setStripColor(int red, int green, int blue) {
-  setLEDColor(STRIP_RED_PIN, red);
-  setLEDColor(STRIP_GREEN_PIN, green);
-  setLEDColor(STRIP_BLUE_PIN, blue);
+  setLEDColor(STRIP_RED_PIN, STRIP_GREEN_PIN, STRIP_BLUE_PIN, red, green, blue);
 }
 
 bool hasDigitInTimer(int digit) {
@@ -147,7 +143,15 @@ void onCommandReceive(int numBytes) {
     uint8_t lowByte = Wire.read();
     receivedData = (highByte << 8) | lowByte;
   }
-  
+
+  if (requestedCommand == 0x1) {
+    if (MODULE_STATE == SOLVED && receivedData != NOT_STARTED) return;
+
+    MODULE_STATE = static_cast<ModuleState>(receivedData);
+    receivedData = 0x0;
+    requestedCommand = 0xF;
+  }
+
   if (requestedCommand == 0x3) {
     timer = receivedData;
     receivedData = 0x0;
@@ -193,10 +197,8 @@ void setup() {
 }
 
 void loop() {
-  if (MODULE_STATE == PLAYING) {
-    updateTimer();
+  if (MODULE_STATE == PLAYING)
     handleButton();
-  }
 
   switch (MODULE_STATE) {
     case SOLVED:
@@ -205,11 +207,13 @@ void loop() {
     case STRIKE:
       setStateColor(HIGH, LOW, LOW);
       break;
-    }
+    default:
+      setStateColor(LOW, LOW, LOW);
+  }
 
-    while (MODULE_STATE == STRIKE) {
-      delay(500);
-    }
+  while (MODULE_STATE == STRIKE || MODULE_STATE == SOLVED) {
+    delay(500);
+  }
 }
 
 void handleButton() {
@@ -295,7 +299,7 @@ void processButtonRelease() {
 }
 
 void handleHoldingSequence() {
-  switch (colorChoice) {
+  switch (stripColor) {
     case BLUE:
       setStripColor(LOW, LOW, HIGH);
       break;

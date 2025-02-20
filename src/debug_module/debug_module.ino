@@ -18,28 +18,28 @@
 // DEBUG_MODULE
 #define MODULE_TYPE 0x01
 
-enum Module_state {
+enum ModuleState {
   PLAYING = 0x01,
   STRIKE = 0x02,
   SOLVED = 0x03,
   PAUSED = 0x04,
   NOT_STARTED = 0x05,
-  STATE_UNKOWN = 0xF
+  STATE_UNKNOWN = 0xF
 };
 
 // UNKNOWN
-uint8_t requested_command = 0xF;
-uint16_t received_data = 0x00;
+uint8_t requestedCommand = 0xF;
+uint16_t receivedData = 0x00;
 
 int timer = 0;
 
-bool solve_pressed = true;
-bool strike_pressed = true;
+bool solvePressed = true;
+bool strikePressed = true;
 
-Module_state MODULE_STATE = NOT_STARTED;
+ModuleState MODULE_STATE = NOT_STARTED;
 
-void handle_command() {
-  switch (requested_command) {
+void handleCommand() {
+  switch (requestedCommand) {
     case 0x02:
       Wire.write(MODULE_STATE);
       if (MODULE_STATE == STRIKE)
@@ -52,34 +52,34 @@ void handle_command() {
       Wire.write(0xF);
   }
 
-  requested_command = 0xFF;
+  requestedCommand = 0xFF;
 }
 
-void on_data_request() {
-  Serial.println(requested_command, HEX);
-  handle_command();
+void onDataRequest() {
+  Serial.println(requestedCommand, HEX);
+  handleCommand();
 }
 
-void on_command_receive(int numBytes) {
-  requested_command = Wire.read();
+void onCommandReceive(int numBytes) {
+  requestedCommand = Wire.read();
 
-  received_data = 0;
+  receivedData = 0;
 
   if (numBytes == 3) {
-    uint8_t high_byte = Wire.read();
-    uint8_t low_byte = Wire.read();
-    received_data = (high_byte << 8) | low_byte;
+    uint8_t highByte = Wire.read();
+    uint8_t lowByte = Wire.read();
+    receivedData = (highByte << 8) | lowByte;
   }
 
   Serial.print("Received command 0x");
-  Serial.print(requested_command, HEX);
+  Serial.print(requestedCommand, HEX);
   Serial.print(" with data 0x");
-  Serial.println(received_data, HEX);
+  Serial.println(receivedData, HEX);
 
-  if (requested_command == 0x3) {
-    timer = received_data;
-    received_data = 0x00;
-    requested_command = 0xF;
+  if (requestedCommand == 0x3) {
+    timer = receivedData;
+    receivedData = 0x00;
+    requestedCommand = 0xF;
 
     Serial.print("New timer: ");
     Serial.println(timer);
@@ -99,8 +99,8 @@ void setup() {
   // listen to broadcast bus
   Wire.begin(MODULE_ADDRESS);
 
-  Wire.onReceive(on_command_receive);
-  Wire.onRequest(on_data_request);
+  Wire.onReceive(onCommandReceive);
+  Wire.onRequest(onDataRequest);
 
   pinMode(SOLVE_PIN, INPUT_PULLUP);
   pinMode(STRIKE_PIN, INPUT_PULLUP);
@@ -118,8 +118,8 @@ void setup() {
 }
 
 void loop() {
-  bool solve_state = digitalRead(SOLVE_PIN) == LOW;
-  bool strike_state = digitalRead(STRIKE_PIN) == LOW;
+  bool solveState = digitalRead(SOLVE_PIN) == LOW;
+  bool strikeState = digitalRead(STRIKE_PIN) == LOW;
 
   switch (MODULE_STATE) {
     case SOLVED:
@@ -134,16 +134,16 @@ void loop() {
       break;
   }
 
-  if (solve_state && !solve_pressed) {
+  if (solveState && !solvePressed) {
     MODULE_STATE = SOLVED;
   } 
   
-  if (strike_state && !strike_pressed) {
+  if (strikeState && !strikePressed) {
     MODULE_STATE = STRIKE;
   }
 
-  solve_pressed = solve_state;
-  strike_pressed = strike_state;
+  solvePressed = solveState;
+  strikePressed = strikeState;
 
   while (MODULE_STATE == STRIKE) {
     analogWrite(R_PIN, 0);

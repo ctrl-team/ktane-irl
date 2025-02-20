@@ -7,7 +7,7 @@
 #define START_ADDRESS 0x08 // we have to avoid reserved addresses
 #define END_ADDRESS 0x18
 
-enum Module_state {
+enum ModuleState {
   PLAYING = 0x01,
   STRIKE = 0x02,
   SOLVED = 0x03,
@@ -16,7 +16,7 @@ enum Module_state {
   STATE_UNKNOWN = 0xF
 };
 
-enum Module_type {
+enum ModuleType {
   DEBUG_MODULE = 0x01,
   BUTTON_MODULE = 0x2,
   MODULE_UNKNOWN = 0xF
@@ -24,20 +24,20 @@ enum Module_type {
 
 struct Module {
   uint8_t id;
-  Module_type type;
-  Module_state state;
+  ModuleType type;
+  ModuleState state;
   bool active;
 };
 
 extern Module modules[END_ADDRESS];
 
-uint8_t receive_byte(uint8_t target_address);
-bool send_packet(uint8_t target_address, uint8_t command);
-bool send_packet(uint8_t target_address, uint8_t command, uint16_t data);
-void broadcast_packet(uint8_t command, uint16_t data);
-Module_type who_are_you(uint8_t target_address);
-Module_state get_state(uint8_t target_address);
-void refresh_states();
-void initialize_devices();
+uint8_t receiveByte(uint8_t target_address);
+bool sendPacket(uint8_t target_address, uint8_t command);
+bool sendPacket(uint8_t target_address, uint8_t command, uint16_t data);
+void broadcastPacket(uint8_t command, uint16_t data);
+ModuleType whoAreYou(uint8_t target_address);
+ModuleState getState(uint8_t target_address);
+void refreshStates();
+void initializeDevices();
 
 #endif

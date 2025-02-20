@@ -13,11 +13,12 @@ enum Module_state {
   SOLVED = 0x03,
   PAUSED = 0x04,
   NOT_STARTED = 0x05,
-  STATE_UNKOWN = 0xF
+  STATE_UNKNOWN = 0xF
 };
 
 enum Module_type {
   DEBUG_MODULE = 0x01,
+  BUTTON_MODULE = 0x2,
   MODULE_UNKNOWN = 0xF
 };
 

@@ -2,6 +2,11 @@
 
 Module modules[END_ADDRESS];
 
+bool isDeviceAvailable(uint8_t address) {
+  Wire.beginTransmission(address);
+  return (Wire.endTransmission() == 0);
+}
+
 uint8_t receiveByte(uint8_t target_address) {
   Wire.requestFrom(target_address, 1);
   
@@ -57,6 +62,7 @@ bool sendPacket(uint8_t target_address, uint8_t command, uint16_t data) {
 
 void broadcastPacket(uint8_t command, uint16_t data) {
   for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
+    if (!isDeviceAvailable(module)) continue;
     sendPacket(module, command, data);
   }
 }
@@ -93,6 +99,12 @@ void initializeDevices() {
   for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
     Serial.print("[id] Scanning address 0x");
     Serial.println(module, HEX);
+
+    if (!isDeviceAvailable(module)) {
+      Serial.print("[id] Skipping address 0x");
+      Serial.println(module, HEX);
+      continue;
+    }
 
     modules[module].id = module;
     modules[module].type = MODULE_UNKNOWN;

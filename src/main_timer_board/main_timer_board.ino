@@ -63,7 +63,7 @@ bool gameStarted = false;
 bool justStarted = false;
 int strike = 0;
 uint16_t timer = 120; // just enough time for 18 hours gameplay
-uint16_t defaultTimer = 300; // 5 minutes
+uint16_t defaultTimer = 10; // 5 minutes
 int leftPadding = 2;
 
 void renderTopBar() {
@@ -342,7 +342,7 @@ void gameLogic() {
   if (openedMenu == NONE && currentTime - intervalTime >= 1000) {
     timer--;
 
-    broadcastPacket(0x03, timer);
+    broadcastPacket(0x3, timer);
 
     intervalTime = millis();
     rerenderContent = true;
@@ -366,7 +366,9 @@ void gameLogic() {
       delay(300);
       noTone(BUZZER_PIN);
 
-      while (digitalRead(ENTER_BUTTON) == LOW) {
+      broadcastPacket(0x1, NOT_STARTED);
+
+      while (digitalRead(ENTER_BUTTON) == HIGH) {
         tft.setTextColor(TFT_RED);
         tft.setTextFont(2);
         tft.setTextSize(2);
@@ -419,6 +421,8 @@ void setup() {
   }
 
   rerender = true;
+
+  broadcastPacket(0x1, NOT_STARTED);
 }
 
 void loop() {

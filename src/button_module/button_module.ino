@@ -145,7 +145,7 @@ void onCommandReceive(int numBytes) {
   }
 
   if (requestedCommand == 0x1) {
-    if (MODULE_STATE == SOLVED && (receivedData != NOT_STARTED || )) return;
+    if (MODULE_STATE == SOLVED && receivedData != NOT_STARTED) return;
 
     MODULE_STATE = static_cast<ModuleState>(receivedData);
     receivedData = 0x0;

@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "bus_receiver.h"
+#include "task_scheduler.h"
+
 #define RGB_COMMON_ANODE // affects all diodes
 
 #define BUTTON_PIN 15  // Button connected to GPIO15
@@ -16,22 +19,6 @@
 #define STRIP_RED_PIN 16
 #define STRIP_GREEN_PIN 17
 #define STRIP_BLUE_PIN 18
-
-// I2C BUS Pins
-#define SDA_PIN 0
-#define SCL_PIN 1
-
-#define MODULE_ADDRESS 0x8 // 0x8 - 0x16
-#define MODULE_TYPE 0x2 // BUTTON_MODULE
-
-enum ModuleState {
-  PLAYING = 0x1,
-  STRIKE = 0x2,
-  SOLVED = 0x3,
-  PAUSED = 0x4,
-  NOT_STARTED = 0x5,
-  STATE_UNKNOWN = 0xF
-};
 
 enum ButtonLabel {
   ABORT = 1,
@@ -49,10 +36,7 @@ enum Color {
   CYAN = 6
 };
 
-uint8_t requestedCommand = 0xF;
-uint16_t receivedData = 0x00;
-
-ModuleState MODULE_STATE = NOT_STARTED;
+BusReceiver receiver;
 
 uint16_t lastPressTime = 0;  // Time of last button press
 uint16_t pressTime = 0;  // Time the button was pressed
@@ -67,9 +51,6 @@ bool litFRKIndicator = true;  // Lit FRK indicator
 ButtonLabel buttonLabel = ABORT;  // Button label ("Abort", "Detonate", etc.)
 Color buttonColor = BLUE;  // Button color ("Blue", "White", "Yellow", "Red")
 Color stripColor = static_cast<Color>(random(1, 5));
-
-// Timer variables
-uint16_t timer = 0;
 
 // Variables to track button state
 bool buttonPressed = false;
@@ -97,8 +78,8 @@ void setStripColor(int red, int green, int blue) {
 }
 
 bool hasDigitInTimer(int digit) {
-  int mins = timer / 60;
-  int secs = timer % 60;
+  int mins = receiver.timer / 60;
+  int secs = receiver.timer % 60;
 
   return (secs % 10 == digit) ||
          ((secs / 10) % 10 == digit) ||
@@ -112,73 +93,13 @@ bool shouldPressAndRelease() {
          (buttonColor == RED && buttonLabel == HOLD);
 }
 
-void handleCommand() {
-  switch (requestedCommand) {
-    case 0x2:
-      Wire.write(MODULE_STATE);
-      if (MODULE_STATE == STRIKE)
-        MODULE_STATE = PLAYING;
-      break;
-    case 0x4:
-      Wire.write(MODULE_TYPE);
-      break;
-    default:
-      Wire.write(0xF);
-  }
-
-  requestedCommand = 0xF;
-}
-
-void onDataRequest() {
-  handleCommand();
-}
-
-void onCommandReceive(int numBytes) {
-  requestedCommand = Wire.read();
-
-  receivedData = 0;
-
-  if (numBytes == 3) {
-    uint8_t highByte = Wire.read();
-    uint8_t lowByte = Wire.read();
-    receivedData = (highByte << 8) | lowByte;
-  }
-
-  if (requestedCommand == 0x1) {
-    if (MODULE_STATE == SOLVED && receivedData != NOT_STARTED) return;
-
-    MODULE_STATE = static_cast<ModuleState>(receivedData);
-    receivedData = 0x0;
-    requestedCommand = 0xF;
-  }
-
-  if (requestedCommand == 0x3) {
-    timer = receivedData;
-    receivedData = 0x0;
-    requestedCommand = 0xF;
-
-    char buffer[6];
-    sprintf(buffer, "%02d:%02d", timer / 60, timer % 60);
-    
-    Serial.print("New time: ");
-    Serial.println(buffer);
-  }
-}
-
 void setup() {
   delay(1000);
 
   Serial.begin(115200);
   Serial.flush();
 
-  // set I2C pins for the controller
-  Wire.setSDA(SDA_PIN);
-  Wire.setSCL(SCL_PIN);
-
-  Wire.begin(MODULE_ADDRESS);
-
-  Wire.onReceive(onCommandReceive);
-  Wire.onRequest(onDataRequest);
+  receiver.begin(BUTTON_MODULE);
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(STATE_RED_PIN, OUTPUT);
@@ -192,7 +113,7 @@ void setup() {
   setStripColor(LOW, LOW, LOW);
 
   Serial.print("Module 0x");
-  Serial.print(MODULE_ADDRESS, HEX);
+  Serial.print(receiver.moduleAddress, HEX);
   Serial.println(" initialized");
 
   Serial.print("Button color: ");
@@ -206,10 +127,10 @@ void setup() {
 }
 
 void loop() {
-  if (MODULE_STATE == PLAYING)
+  if (receiver.state == PLAYING)
     handleButton();
 
-  switch (MODULE_STATE) {
+  switch (receiver.state) {
     case SOLVED:
       setStateColor(LOW, HIGH, LOW);
       break;
@@ -220,7 +141,7 @@ void loop() {
       setStateColor(LOW, LOW, LOW);
   }
 
-  while (MODULE_STATE == STRIKE || MODULE_STATE == SOLVED) {
+  while (receiver.state == STRIKE || receiver.state == SOLVED) {
     delay(500);
   }
 }
@@ -250,7 +171,7 @@ void handleButton() {
       
       if (shouldPressAndRelease() && duration >= HOLD_TIME) {
         Serial.println("Strike! Held when should have been quick press");
-        MODULE_STATE = STRIKE;
+        receiver.state = STRIKE;
         buttonPressed = false;  // Reset button state after strike
       } else if (!shouldPressAndRelease() && !isHolding && duration >= HOLD_TIME) {
         handleHoldingSequence();
@@ -276,7 +197,7 @@ void processButtonRelease() {
   if (shouldPressAndRelease()) {
     if (duration < HOLD_TIME) {
       Serial.println("Module solved! Correct quick press.");
-      MODULE_STATE = SOLVED;
+      receiver.state = SOLVED;
     }
   } else {
     if (duration >= HOLD_TIME) {
@@ -292,14 +213,14 @@ void processButtonRelease() {
       
       if (correctRelease) {
         Serial.println("Module solved! Correct hold and release.");
-        MODULE_STATE = SOLVED;
+        receiver.state = SOLVED;
       } else {
         Serial.println("Strike! Released on wrong number.");
-        MODULE_STATE = STRIKE;
+        receiver.state = STRIKE;
       }
     } else {
       Serial.println("Strike! Button wasn't held long enough.");
-      MODULE_STATE = STRIKE;
+      receiver.state = STRIKE;
     }
   }
 

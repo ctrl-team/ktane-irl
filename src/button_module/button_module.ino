@@ -93,106 +93,6 @@ bool shouldPressAndRelease() {
          (buttonColor == RED && buttonLabel == HOLD);
 }
 
-void setup() {
-  delay(1000);
-
-  Serial.begin(115200);
-  Serial.flush();
-
-  receiver.begin(BUTTON_MODULE);
-
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  pinMode(STATE_RED_PIN, OUTPUT);
-  pinMode(STATE_GREEN_PIN, OUTPUT);
-  pinMode(STATE_BLUE_PIN, OUTPUT);
-  pinMode(STRIP_RED_PIN, OUTPUT);
-  pinMode(STRIP_GREEN_PIN, OUTPUT);
-  pinMode(STRIP_BLUE_PIN, OUTPUT);
-
-  setStateColor(LOW, LOW, LOW);
-  setStripColor(LOW, LOW, LOW);
-
-  Serial.print("Module 0x");
-  Serial.print(receiver.moduleAddress, HEX);
-  Serial.println(" initialized");
-
-  Serial.print("Button color: ");
-  Serial.println(buttonColor);
-
-  Serial.print("Button label: ");
-  Serial.println(buttonLabel);
-
-  Serial.print("Strip color: ");
-  Serial.println(stripColor);
-}
-
-void loop() {
-  if (receiver.state == PLAYING)
-    handleButton();
-
-  switch (receiver.state) {
-    case SOLVED:
-      setStateColor(LOW, HIGH, LOW);
-      break;
-    case STRIKE:
-      setStateColor(HIGH, LOW, LOW);
-      break;
-    default:
-      setStateColor(LOW, LOW, LOW);
-  }
-
-  while (receiver.state == STRIKE || receiver.state == SOLVED) {
-    delay(500);
-  }
-}
-
-void handleButton() {
-  bool currentButtonState = digitalRead(BUTTON_PIN);
-  uint16_t currentTime = millis();
-
-  // Button press handling
-  if (currentButtonState == LOW && previousButtonState == HIGH) {
-    if (currentTime - lastPressTime > DEBOUNCE_DELAY) {
-      buttonPressed = true;
-      isHolding = false;
-      pressTime = currentTime;
-      lastHoldCheck = currentTime;
-      Serial.println("Button pressed!");
-    }
-  }
-  
-  // Continuous hold checking
-  if (buttonPressed && currentButtonState == LOW) {
-    duration = currentTime - pressTime;
-    
-    // Check for hold duration every 100ms
-    if (currentTime - lastHoldCheck >= 100) {
-      lastHoldCheck = currentTime;
-      
-      if (shouldPressAndRelease() && duration >= HOLD_TIME) {
-        Serial.println("Strike! Held when should have been quick press");
-        receiver.state = STRIKE;
-        buttonPressed = false;  // Reset button state after strike
-      } else if (!shouldPressAndRelease() && !isHolding && duration >= HOLD_TIME) {
-        handleHoldingSequence();
-        isHolding = true;
-        Serial.println("Hold threshold reached");
-      }
-    }
-  }
-  
-  // Button release handling
-  if (currentButtonState == HIGH && previousButtonState == LOW) {
-    if (buttonPressed) {
-      duration = currentTime - pressTime;
-      buttonPressed = false;
-      processButtonRelease();
-    }
-  }
-
-  previousButtonState = currentButtonState;
-}
-
 void processButtonRelease() {
   if (shouldPressAndRelease()) {
     if (duration < HOLD_TIME) {
@@ -254,4 +154,104 @@ void handleHoldingSequence() {
 
   Serial.print("LED strip color: ");
   Serial.println(stripColor);
+}
+
+void handleButton() {
+  bool currentButtonState = digitalRead(BUTTON_PIN);
+  uint16_t currentTime = millis();
+
+  // Button press handling
+  if (currentButtonState == LOW && previousButtonState == HIGH) {
+    if (currentTime - lastPressTime > DEBOUNCE_DELAY) {
+      buttonPressed = true;
+      isHolding = false;
+      pressTime = currentTime;
+      lastHoldCheck = currentTime;
+      Serial.println("Button pressed!");
+    }
+  }
+  
+  // Continuous hold checking
+  if (buttonPressed && currentButtonState == LOW) {
+    duration = currentTime - pressTime;
+    
+    // Check for hold duration every 100ms
+    if (currentTime - lastHoldCheck >= 100) {
+      lastHoldCheck = currentTime;
+      
+      if (shouldPressAndRelease() && duration >= HOLD_TIME) {
+        Serial.println("Strike! Held when should have been quick press");
+        receiver.state = STRIKE;
+        buttonPressed = false;  // Reset button state after strike
+      } else if (!shouldPressAndRelease() && !isHolding && duration >= HOLD_TIME) {
+        handleHoldingSequence();
+        isHolding = true;
+        Serial.println("Hold threshold reached");
+      }
+    }
+  }
+  
+  // Button release handling
+  if (currentButtonState == HIGH && previousButtonState == LOW) {
+    if (buttonPressed) {
+      duration = currentTime - pressTime;
+      buttonPressed = false;
+      processButtonRelease();
+    }
+  }
+
+  previousButtonState = currentButtonState;
+}
+
+void setup() {
+  delay(1000);
+
+  Serial.begin(115200);
+  Serial.flush();
+
+  receiver.begin(BUTTON_MODULE);
+
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(STATE_RED_PIN, OUTPUT);
+  pinMode(STATE_GREEN_PIN, OUTPUT);
+  pinMode(STATE_BLUE_PIN, OUTPUT);
+  pinMode(STRIP_RED_PIN, OUTPUT);
+  pinMode(STRIP_GREEN_PIN, OUTPUT);
+  pinMode(STRIP_BLUE_PIN, OUTPUT);
+
+  setStateColor(LOW, LOW, LOW);
+  setStripColor(LOW, LOW, LOW);
+
+  Serial.print("Module 0x");
+  Serial.print(receiver.moduleAddress, HEX);
+  Serial.println(" initialized");
+
+  Serial.print("Button color: ");
+  Serial.println(buttonColor);
+
+  Serial.print("Button label: ");
+  Serial.println(buttonLabel);
+
+  Serial.print("Strip color: ");
+  Serial.println(stripColor);
+}
+
+void loop() {
+  if (receiver.state == PLAYING)
+    handleButton();
+
+  switch (receiver.state) {
+    case SOLVED:
+      setStateColor(LOW, HIGH, LOW);
+      break;
+    case STRIKE:
+      setStateColor(HIGH, LOW, LOW);
+      break;
+    default:
+      setStateColor(LOW, LOW, LOW);
+  }
+
+  while (receiver.state == STRIKE || receiver.state == SOLVED) {
+    delay(500);
+  }
 }

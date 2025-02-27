@@ -7,6 +7,9 @@
 #define START_ADDRESS 0x08 // we have to avoid reserved addresses
 #define END_ADDRESS 0x18
 
+#define SDA_PIN 0
+#define SCL_PIN 1
+
 enum ModuleState {
   PLAYING = 0x01,
   STRIKE = 0x02,
@@ -29,15 +32,27 @@ struct Module {
   bool active;
 };
 
-extern Module modules[END_ADDRESS];
+class BusController {
+public:
+  int moduleCount;
+  Module modules[END_ADDRESS];
+  ModuleState state;
+  int strikes;
 
-uint8_t receiveByte(uint8_t target_address);
-bool sendPacket(uint8_t target_address, uint8_t command);
-bool sendPacket(uint8_t target_address, uint8_t command, uint16_t data);
-void broadcastPacket(uint8_t command, uint16_t data);
-ModuleType whoAreYou(uint8_t target_address);
-ModuleState getState(uint8_t target_address);
-void refreshStates();
-void initializeDevices();
+  ModuleType whoAreYou(uint8_t targetAddress);
+  ModuleState getState(uint8_t targetAddress);
+  void refreshStates();
+  void initializeDevices();
+  void updateState(ModuleState state);
+
+  void begin();
+
+private:
+  bool checkAddressAvailability(uint8_t address);
+  bool sendPacket(uint8_t targetAddress, uint8_t command);
+  bool sendPacket(uint8_t targetAddress, uint8_t command, uint16_t data);
+  void broadcastPacket(uint8_t command, uint16_t data);
+  uint8_t receiveByte(uint8_t targetAddress);
+};
 
 #endif

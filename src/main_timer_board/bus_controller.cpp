@@ -1,21 +1,108 @@
 #include "bus_controller.h"
 
-Module modules[END_ADDRESS];
+ModuleType BusController::whoAreYou(uint8_t targetAddress) {
+  if (sendPacket(targetAddress, 0x04))
+    return static_cast<ModuleType>(receiveByte(targetAddress));
+  return MODULE_UNKNOWN;
+}
 
-bool isDeviceAvailable(uint8_t address) {
+ModuleState BusController::getState(uint8_t targetAddress) {
+  if (sendPacket(targetAddress, 0x02))
+    return static_cast<ModuleState>(receiveByte(targetAddress));
+  return STATE_UNKNOWN;
+}
+
+void BusController::refreshStates() {
+  for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
+    if (!modules[module].active) continue;
+
+    ModuleState moduleState = getState(modules[module].id);
+    if (moduleState == STATE_UNKNOWN) continue;
+
+    modules[module].state = moduleState;
+
+    Serial.print("[rs] Address 0x");
+    Serial.print(modules[module].id, HEX);
+    Serial.print(" state is 0x");
+    Serial.println(modules[module].state, HEX);
+  }
+}
+
+void BusController::initializeDevices() {
+  moduleCount = 0;
+
+  for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
+    Serial.print("[id] Scanning address 0x");
+    Serial.println(module, HEX);
+
+    if (!checkAddressAvailability(module)) {
+      Serial.print("[id] Skipping address 0x");
+      Serial.println(module, HEX);
+      continue;
+    }
+
+    modules[module].id = module;
+    modules[module].type = MODULE_UNKNOWN;
+    modules[module].active = false;
+
+    ModuleType moduleType = whoAreYou(module);
+    if (moduleType == MODULE_UNKNOWN) continue;
+
+    modules[module].type = moduleType;
+    modules[module].active = true;
+
+    ModuleState moduleState = getState(module);
+    if (moduleState == STATE_UNKNOWN) continue;
+
+    modules[module].state = moduleState;
+
+    moduleCount++;
+
+    Serial.print("[id] Address 0x");
+    Serial.print(module, HEX);
+    Serial.print(" identified itself as type 0x");
+    Serial.println(moduleType, HEX);
+  }
+}
+
+void BusController::updateState(ModuleState state) {
+  this->state = state;
+  broadcastPacket(0x1, state);
+}
+
+void BusController::begin() {
+  Wire.setSDA(SDA_PIN);
+  Wire.setSCL(SCL_PIN);
+  Wire.begin();
+
+  state = NOT_STARTED;
+
+  initializeDevices();
+
+  for (auto module : modules) {
+    Serial.print("Module at address 0x");
+    Serial.print(module.id, HEX);
+    Serial.print(" is ");
+    Serial.println(module.active ? "online" : "offline");
+  }
+
+  broadcastPacket(0x1, state);
+}
+
+bool BusController::checkAddressAvailability(uint8_t address) {
   Wire.beginTransmission(address);
   return (Wire.endTransmission() == 0);
 }
 
-uint8_t receiveByte(uint8_t target_address) {
-  Wire.requestFrom(target_address, 1);
-  
-  unsigned long start_time = millis();
+uint8_t BusController::receiveByte(uint8_t targetAddress) {
+  Wire.requestFrom(targetAddress, 1);
+
+  uint32_t startTime = millis();
   while (!Wire.available()) {
     // 80ms timeout
-    if (millis() - start_time > 80) {
+    if (millis() - startTime > 80) {
       Serial.print("Timeout waiting for response from 0x");
-      Serial.println(target_address, HEX);
+      Serial.println(targetAddress, HEX);
       return 0xF;
     }
     delay(1); // allow CPU time for other tasks
@@ -24,8 +111,8 @@ uint8_t receiveByte(uint8_t target_address) {
   return Wire.read();
 }
 
-bool sendPacket(uint8_t target_address, uint8_t command) {
-  Wire.beginTransmission(target_address);
+bool BusController::sendPacket(uint8_t targetAddress, uint8_t command) {
+  Wire.beginTransmission(targetAddress);
   Wire.write(command);
 
   // non-zero means error
@@ -33,15 +120,15 @@ bool sendPacket(uint8_t target_address, uint8_t command) {
     Serial.print("Failed to send 0x");
     Serial.print(command, HEX);
     Serial.print(" request to address 0x");
-    Serial.println(target_address, HEX);
+    Serial.println(targetAddress, HEX);
     return false;
   }
 
   return true;
 }
 
-bool sendPacket(uint8_t target_address, uint8_t command, uint16_t data) {
-  Wire.beginTransmission(target_address);
+bool BusController::sendPacket(uint8_t targetAddress, uint8_t command, uint16_t data) {
+  Wire.beginTransmission(targetAddress);
   Wire.write(command);
   Wire.write((uint8_t)(data >> 8)); // high byte
   Wire.write((uint8_t)(data & 0xFF)); // low byte
@@ -53,79 +140,16 @@ bool sendPacket(uint8_t target_address, uint8_t command, uint16_t data) {
     Serial.print(" with data 0x");
     Serial.print(data, HEX);
     Serial.print(" to address 0x");
-    Serial.println(target_address, HEX);
+    Serial.println(targetAddress, HEX);
     return false;
   }
 
   return true;
 }
 
-void broadcastPacket(uint8_t command, uint16_t data) {
+void BusController::broadcastPacket(uint8_t command, uint16_t data) {
   for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
-    if (!isDeviceAvailable(module)) continue;
+    if (!checkAddressAvailability(module)) continue;
     sendPacket(module, command, data);
   }
-}
-
-ModuleType whoAreYou(uint8_t target_address) {
-  if (sendPacket(target_address, 0x04))
-    return static_cast<ModuleType>(receiveByte(target_address));
-  return MODULE_UNKNOWN;
-}
-
-ModuleState getState(uint8_t target_address) {
-  if (sendPacket(target_address, 0x02))
-    return static_cast<ModuleState>(receiveByte(target_address));
-  return STATE_UNKNOWN;
-}
-
-void refreshStates() {
-  for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
-    if (!modules[module].active) continue;
-
-    ModuleState module_state = getState(modules[module].id);
-    if (module_state == STATE_UNKNOWN) continue;
-
-    modules[module].state = module_state;
-
-    Serial.print("[rs] Address 0x");
-    Serial.print(modules[module].id, HEX);
-    Serial.print(" state is 0x");
-    Serial.println(modules[module].state, HEX);
-  }
-}
-
-void initializeDevices() {
-  for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
-    Serial.print("[id] Scanning address 0x");
-    Serial.println(module, HEX);
-
-    if (!isDeviceAvailable(module)) {
-      Serial.print("[id] Skipping address 0x");
-      Serial.println(module, HEX);
-      continue;
-    }
-
-    modules[module].id = module;
-    modules[module].type = MODULE_UNKNOWN;
-    modules[module].active = false;
-
-    ModuleType module_type = whoAreYou(module);
-    if (module_type == MODULE_UNKNOWN) continue;
-
-    modules[module].type = module_type;
-    modules[module].active = true;
-
-    ModuleState module_state = getState(module);
-    if (module_state == STATE_UNKNOWN) continue;
-
-    modules[module].state = module_state;
-
-    Serial.print("[id] Address 0x");
-    Serial.print(module, HEX);
-    Serial.print(" identified itself as type 0x");
-    Serial.println(module_type, HEX);
-  }
-
-  refreshStates();
 }

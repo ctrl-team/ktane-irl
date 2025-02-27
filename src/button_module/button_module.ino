@@ -2,7 +2,6 @@
 #include <Wire.h>
 
 #include "bus_receiver.h"
-#include "task_scheduler.h"
 
 #define RGB_COMMON_ANODE // affects all diodes
 

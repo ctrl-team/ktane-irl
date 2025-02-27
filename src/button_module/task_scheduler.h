@@ -12,15 +12,15 @@ struct Task {
 };
 
 class TaskScheduler {
-  public:
-    void scheduleTask(void (*callback)(), uint32_t delay);
-    void checkTasks();
-    void begin();
+public:
+  void scheduleTask(void (*callback)(), uint32_t delay);
+  void checkTasks();
+  void begin();
 
-  private:
-    int timer;
-    Task tasks[MAX_TASKS];
-    uint8_t taskCount = 0;
+private:
+  int timer;
+  Task tasks[MAX_TASKS];
+  uint8_t taskCount = 0;
 };
 
 #endif

@@ -37,13 +37,17 @@ public:
   int moduleCount;
   Module modules[END_ADDRESS];
   ModuleState state;
+  bool justStriked;
+  bool justSolved;
   int strikes;
+  int solved;
 
   ModuleType whoAreYou(uint8_t targetAddress);
   ModuleState getState(uint8_t targetAddress);
   void refreshStates();
   void initializeDevices();
   void updateState(ModuleState state);
+  void updateTimer(uint16_t timer);
 
   void begin();
 

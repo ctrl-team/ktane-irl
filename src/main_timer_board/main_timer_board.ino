@@ -42,7 +42,7 @@ bool backPressed = false;
 
 bool justStarted = false;
 uint16_t timer = 120; // just enough time for 18 hours gameplay
-uint16_t defaultTimer = 10; // 5 minutes
+uint16_t defaultTimer = 300; // 5 minutes
 int leftPadding = 2;
 
 void renderTopBar() {
@@ -90,7 +90,7 @@ void renderBottomBar() {
         tft.setCursor(leftPadding * 5 + x + y, LCD_HEIGHT - 14);
         tft.print("F3 - ENTER");
         tft.setCursor(leftPadding * 7 + x + y + z, LCD_HEIGHT - 14);
-        tft.setTextColor(controller.state == PLAYING ? TFT_WHITE : TFT_DARKGREY);
+        tft.setTextColor(controller.state == PAUSED ? TFT_WHITE : TFT_DARKGREY);
         tft.print("F4 - BACK");
         break;
       }
@@ -98,6 +98,10 @@ void renderBottomBar() {
   }
 
   if (openedMenu == SETTINGS) {
+    int x = tft.textWidth("F1 - UP");
+    int y = tft.textWidth("F2 - DOWN");
+    int z = tft.textWidth("F3 - ENTER");
+
     tft.print("F1 - UP");
     tft.setCursor(leftPadding * 3 + x, LCD_HEIGHT - 14);
     tft.print("F2 - DOWN");
@@ -121,14 +125,14 @@ void renderContent() {
 
   if (openedMenu == MAIN_MENU) {
     tft.setTextColor(TFT_WHITE, selectedItem == 0 ? TFT_DARKGREEN : TFT_BLACK);
-    tft.print(controller.state == PLAYING ? "End game" : "Start game");
+    tft.print(controller.state == PAUSED ? "End game" : "Start game");
 
     tft.setCursor(leftPadding, 22 + tft.fontHeight() + 4, 2);
-    tft.setTextColor(controller.state == PLAYING ? TFT_DARKGREY : TFT_WHITE, selectedItem == 1 ? TFT_DARKGREEN : TFT_BLACK);
+    tft.setTextColor(controller.state == PAUSED ? TFT_DARKGREY : TFT_WHITE, selectedItem == 1 ? TFT_DARKGREEN : TFT_BLACK);
     tft.print("Settings");
 
     tft.setCursor(leftPadding, 22 + tft.fontHeight() * 2 + 8, 2);
-    tft.setTextColor(controller.state == PLAYING ? TFT_DARKGREY : TFT_WHITE, selectedItem == 2 ? TFT_DARKGREEN : TFT_BLACK);
+    tft.setTextColor(controller.state == PAUSED ? TFT_DARKGREY : TFT_WHITE, selectedItem == 2 ? TFT_DARKGREEN : TFT_BLACK);
     tft.print("Information");
   }
 
@@ -194,19 +198,19 @@ void render() {
 void gameOver() {
   tft.fillScreen(TFT_BLACK);
 
-  tone(BUZZER_PIN, 2000);
-  delay(300);
-  noTone(BUZZER_PIN);
-  delay(100);
-  tone(BUZZER_PIN, 2000);
-  delay(300);
-  noTone(BUZZER_PIN);
-  delay(100);
-  tone(BUZZER_PIN, 2000);
-  delay(300);
-  noTone(BUZZER_PIN);
-
   controller.updateState(NOT_STARTED);
+
+  tone(BUZZER_PIN, 2000);
+  delay(300);
+  noTone(BUZZER_PIN);
+  delay(100);
+  tone(BUZZER_PIN, 2000);
+  delay(300);
+  noTone(BUZZER_PIN);
+  delay(100);
+  tone(BUZZER_PIN, 2000);
+  delay(300);
+  noTone(BUZZER_PIN);
 
   while (digitalRead(ENTER_BUTTON) == HIGH) {
     tft.setTextColor(TFT_RED);
@@ -219,9 +223,74 @@ void gameOver() {
     delay(50);
   }
 
+  controller.solved = 0;
+  controller.strikes = 0;
+  timer = 0;
   enterPressed = true;
   openedMenu = MAIN_MENU;
   rerender = true;
+}
+
+void gameWon() {
+  tft.fillScreen(TFT_BLACK);
+
+  tone(BUZZER_PIN, 2000);
+  delay(300);
+  noTone(BUZZER_PIN);
+  delay(100);
+  tone(BUZZER_PIN, 1500);
+  delay(300);
+  noTone(BUZZER_PIN);
+  delay(100);
+  tone(BUZZER_PIN, 1000);
+  delay(300);
+  noTone(BUZZER_PIN);
+
+  while (digitalRead(ENTER_BUTTON) == HIGH) {
+    tft.setTextColor(TFT_GREEN);
+    tft.setTextFont(2);
+    tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("GAME WON") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2) - 20);
+    tft.print("GAME WON");
+    tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("Press 'Enter' to continue", 1) / 2), (LCD_HEIGHT / 2) + (tft.fontHeight() / 2) + 2, 1);
+    tft.setTextColor(TFT_WHITE);
+    tft.print("Press 'Enter' to continue");
+    delay(50);
+  }
+
+  controller.updateState(NOT_STARTED);
+
+  controller.solved = 0;
+  controller.strikes = 0;
+  timer = 0;
+  enterPressed = true;
+  openedMenu = MAIN_MENU;
+  rerender = true;
+}
+
+void startGame() {
+  controller.updateState(PLAYING);
+  timer = defaultTimer;
+  justStarted = true;
+
+  openedMenu = NONE;
+  rerender = true;
+
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.setTextFont(8);
+  tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("321") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
+  tft.fillScreen(TFT_BLACK);
+
+  tft.print("3");
+  tone(BUZZER_PIN, 1000, 100);
+  delay(900);
+
+  tft.print("2");
+  tone(BUZZER_PIN, 1500, 100);
+  delay(900);
+
+  tft.print("1");
+  tone(BUZZER_PIN, 2000, 100);
+  delay(900);
 }
 
 void handleButtons() {
@@ -252,7 +321,7 @@ void handleButtons() {
       selectedItem = ++selectedItem % 3;
     
     if (openedMenu == SETTINGS)
-      selectedItem ++selectedItem % 1;
+      selectedItem = ++selectedItem % 1;
 
     if (openedMenu == SETTINGS_TIMER)
       defaultTimer > 0 && defaultTimer--;
@@ -268,37 +337,10 @@ void handleButtons() {
     if (openedMenu == MAIN_MENU) {
       switch (selectedItem) {
         case 0:
-          if (controller.state == PLAYING)
-            controller.updateState(NOT_STARTED);
+          if (controller.state == PAUSED)
+            gameOver();
           else
-            controller.updateState(PLAYING);
-
-          openedMenu = controller.state == PLAYING ? NONE : MAIN_MENU;
-          rerender = true;
-
-          if (controller.state == PLAYING) {
-            timer = defaultTimer;
-            justStarted = true;
-
-            tft.setTextColor(TFT_WHITE, TFT_BLACK);
-            tft.setTextFont(8);
-            tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("321") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
-            tft.fillScreen(TFT_BLACK);
-
-            tft.print("3");
-            tone(BUZZER_PIN, 1000, 100);
-            delay(900);
-
-            tft.print("2");
-            tone(BUZZER_PIN, 1500, 100);
-            delay(900);
-
-            tft.print("1");
-            tone(BUZZER_PIN, 2000, 100);
-            delay(900);
-          } else {
-            timer = 0;
-          }
+            startGame();
           break;
         case 1:
           openedMenu = SETTINGS;
@@ -309,6 +351,8 @@ void handleButtons() {
           rerender = true;
           break;
       }
+
+      return;
     }
 
     if (openedMenu == SETTINGS) {
@@ -318,6 +362,8 @@ void handleButtons() {
           rerender = true;
           break;
       }
+
+      return;
     }
     
     if (openedMenu == NONE) {
@@ -326,18 +372,22 @@ void handleButtons() {
       openedMenu = MAIN_MENU;
       rerender = true;
       lastOpened = millis();
+
+      return;
     }
 
     if (openedMenu == SETTINGS_TIMER) {
       openedMenu = SETTINGS;
       rerender = true;
+
+      return;
     }
   }
 
   if (backState && !backPressed) {
     tone(BUZZER_PIN, 1000, 50);
 
-    if (openedMenu == MAIN_MENU && controller.state == PLAYING) {
+    if (openedMenu == MAIN_MENU && controller.state == PAUSED) {
       controller.updateState(PLAYING);
 
       openedMenu = NONE;
@@ -375,17 +425,22 @@ void gameLogic() {
   if (openedMenu == NONE && currentTime - intervalTime >= 1000) {
     timer--;
 
-    broadcastPacket(0x3, timer);
+    controller.updateTimer(timer);
 
     intervalTime = millis();
     rerenderContent = true;
 
-    if (timer <= 5) {
+    if (timer <= 5)
       tone(BUZZER_PIN, 1000 + 100 * (5 - timer), 50);
-    }
 
     if (timer <= 0) gameOver();
   }
+
+  if (controller.strikes > 2)
+    gameOver();
+
+  if (controller.solved >= controller.moduleCount)
+    gameWon();
 }
 
 void setup() {
@@ -424,24 +479,31 @@ void loop() {
     tone(BUZZER_PIN, 2000);
     delay(50);
     noTone(BUZZER_PIN);
-
-    controller.updateState(PLAYING);
   }
 
   if (currentTime - stateTimer > 100) {
     stateTimer = millis();
-    refreshStates();
+    controller.refreshStates();
 
-    for (Module module : modules) {
-      if (module.state == STRIKE) {
-        strike++;
-        tone(BUZZER_PIN, 800, 500);
-        break;
-      }
+    if (controller.justStriked) {
+      tone(BUZZER_PIN, 800, 500);
+
+      Serial.print("[lo] strike: ");
+      Serial.println(controller.strikes);
     }
 
-    Serial.print("[lo] strike: ");
-    Serial.println(strike);
+    if (controller.justStriked) {
+      tone(BUZZER_PIN, 1000);
+      delay(50);
+      tone(BUZZER_PIN, 1500);
+      delay(50);
+      tone(BUZZER_PIN, 2000);
+      delay(50);
+      noTone(BUZZER_PIN);
+
+      Serial.print("[lo] solved: ");
+      Serial.println(controller.solved);
+    }
   }
 
   if (controller.state == PLAYING) gameLogic();

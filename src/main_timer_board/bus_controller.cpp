@@ -13,11 +13,24 @@ ModuleState BusController::getState(uint8_t targetAddress) {
 }
 
 void BusController::refreshStates() {
+  justStriked = false;
+  justSolved = false;
+
   for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
     if (!modules[module].active) continue;
 
     ModuleState moduleState = getState(modules[module].id);
     if (moduleState == STATE_UNKNOWN) continue;
+
+    if (moduleState == STRIKE) {
+      justStriked = true;
+      strikes++;
+    }
+
+    if (modules[module].state != SOLVED && moduleState == SOLVED) {
+      justSolved = true;
+      solved++;
+    }
 
     modules[module].state = moduleState;
 
@@ -70,12 +83,18 @@ void BusController::updateState(ModuleState state) {
   broadcastPacket(0x1, state);
 }
 
+void BusController::updateTimer(uint16_t timer) {
+  broadcastPacket(0x3, timer);
+}
+
 void BusController::begin() {
   Wire.setSDA(SDA_PIN);
   Wire.setSCL(SCL_PIN);
   Wire.begin();
 
   state = NOT_STARTED;
+  strikes = 0;
+  solved = 0;
 
   initializeDevices();
 

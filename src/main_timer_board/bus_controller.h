@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include "module_configuration.h"
 
 #define START_ADDRESS 0x08 // we have to avoid reserved addresses
 #define END_ADDRESS 0x18
@@ -37,6 +38,7 @@ public:
   int moduleCount;
   Module modules[END_ADDRESS];
   ModuleState state;
+  ModuleConfiguration configuration;
   bool justStriked;
   bool justSolved;
   int strikes;
@@ -44,10 +46,13 @@ public:
 
   ModuleType whoAreYou(uint8_t targetAddress);
   ModuleState getState(uint8_t targetAddress);
+
   void refreshStates();
   void initializeDevices();
+
   void updateState(ModuleState state);
   void updateTimer(uint16_t timer);
+  void sendConfiguration();
 
   void begin();
 
@@ -55,7 +60,9 @@ private:
   bool checkAddressAvailability(uint8_t address);
   bool sendPacket(uint8_t targetAddress, uint8_t command);
   bool sendPacket(uint8_t targetAddress, uint8_t command, uint16_t data);
+  bool sendPacket(uint8_t targetAddress, uint8_t command, char* data, size_t length);
   void broadcastPacket(uint8_t command, uint16_t data);
+  void broadcastPacket(uint8_t command, char* data, size_t length);
   uint8_t receiveByte(uint8_t targetAddress);
 };
 

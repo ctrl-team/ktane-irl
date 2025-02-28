@@ -1,5 +1,6 @@
 #include "bus_controller.h"
 
+
 ModuleType BusController::whoAreYou(uint8_t targetAddress) {
   if (sendPacket(targetAddress, 0x04))
     return static_cast<ModuleType>(receiveByte(targetAddress));
@@ -87,6 +88,12 @@ void BusController::updateTimer(uint16_t timer) {
   broadcastPacket(0x3, timer);
 }
 
+void BusController::sendConfiguration() {
+  broadcastPacket(0x5, configuration.flags);
+  broadcastPacket(0x6, configuration.ports);
+  broadcastPacket(0x7, configuration.serial, sizeof(configuration.serial));
+}
+
 void BusController::begin() {
   Wire.setSDA(SDA_PIN);
   Wire.setSCL(SCL_PIN);
@@ -166,9 +173,36 @@ bool BusController::sendPacket(uint8_t targetAddress, uint8_t command, uint16_t 
   return true;
 }
 
+bool BusController::sendPacket(uint8_t targetAddress, uint8_t command, char* data, size_t length) {
+  Wire.beginTransmission(targetAddress);
+  Wire.write(command);
+
+  Wire.write((const uint8_t*)data, length);
+
+  // non-zero means error
+  if (Wire.endTransmission() != 0) {
+    Serial.print("Failed to send command 0x");
+    Serial.print(command, HEX);
+    Serial.print(" with data \"");
+    Serial.print(data);
+    Serial.print("\" to address 0x");
+    Serial.println(targetAddress, HEX);
+    return false;
+  }
+
+  return true;
+}
+
 void BusController::broadcastPacket(uint8_t command, uint16_t data) {
   for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
     if (!checkAddressAvailability(module)) continue;
     sendPacket(module, command, data);
+  }
+}
+
+void BusController::broadcastPacket(uint8_t command, char* data, size_t length) {
+  for (int module = START_ADDRESS; module < END_ADDRESS; module++) {
+    if (!checkAddressAvailability(module)) continue;
+    sendPacket(module, command, data, length);
   }
 }

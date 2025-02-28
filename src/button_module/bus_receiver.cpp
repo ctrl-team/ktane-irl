@@ -16,7 +16,6 @@ void BusReceiver::begin(ModuleType type) {
 
   timer = 0;
   state = NOT_STARTED;
-
   moduleAddress = requestAvailableAddress();
 
   Wire.begin(moduleAddress);
@@ -25,27 +24,55 @@ void BusReceiver::begin(ModuleType type) {
 }
 
 void BusReceiver::receiveCallback(int numBytes) {
+  if (numBytes <= 0) return; // sanity check
+
   requestedCommand = Wire.read();
+  numBytes--;
 
-  receivedData = 0;
+  if (requestedCommand == 0x7) {
+    Wire.readBytes(configuration.serial, numBytes);
 
-  if (numBytes == 3) {
-    uint8_t highByte = Wire.read();
-    uint8_t lowByte = Wire.read();
-    receivedData = (highByte << 8) | lowByte;
+    Serial.print("Serial number received: ");
+    Serial.println(configuration.serial);
+    
+    return;
   }
 
-  if (requestedCommand == 0x1) {
-    if (state == SOLVED && receivedData != NOT_STARTED) return;
-    state = static_cast<ModuleState>(receivedData);
-    receivedData = 0x0;
-    requestedCommand = 0xF;
-  }
+  // receiving a 16-bit integer
+  if (numBytes == 2) {
+    uint8_t buffer[2];
+    Wire.readBytes(buffer, 2);
+    uint16_t value = (buffer[0] << 8) | buffer[1];
 
-  if (requestedCommand == 0x3) {
-    timer = receivedData;
-    receivedData = 0x0;
-    requestedCommand = 0xF;
+    switch (requestedCommand) {
+      case 0x5:
+        configuration.flags = value;
+        Serial.print("Flags set: 0b");
+        Serial.println(configuration.flags, BIN);
+        break;
+
+      case 0x6:
+        configuration.ports = value;
+        Serial.print("Ports set: 0b");
+        Serial.println(configuration.ports, BIN);
+        break;
+
+      case 0x1:
+        if (state == SOLVED && value != NOT_STARTED) return;
+        state = static_cast<ModuleState>(value);
+        break;
+
+      case 0x3:
+        timer = value;
+        break;
+
+      default:
+        Serial.print("Unknown command: 0x");
+        Serial.println(requestedCommand, HEX);
+        break;
+    }
+
+    return;
   }
 }
 

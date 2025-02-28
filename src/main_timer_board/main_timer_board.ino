@@ -275,6 +275,18 @@ void startGame() {
   openedMenu = NONE;
   rerender = true;
 
+  randomSeed(analogRead(A0));
+
+  controller.configuration.randomize(random(6), random(3));
+  // Serial.print("Flags set: 0b");
+  // Serial.println(controller.configuration.flags, BIN);
+  // Serial.print("Ports set: 0b");
+  // Serial.println(controller.configuration.ports, BIN);
+  // Serial.print("Serial number: ");
+  // Serial.println(controller.configuration.serial);
+
+  controller.sendConfiguration();
+
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
   tft.setTextFont(8);
   tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth("321") / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));

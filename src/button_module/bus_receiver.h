@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include "module_configuration.h"
 
 #define SDA_PIN 0
 #define SCL_PIN 1
@@ -29,6 +30,7 @@ class BusReceiver {
   public:
     ModuleState state;
     ModuleType type;
+    ModuleConfiguration configuration;
 
     uint8_t moduleAddress;
     uint16_t timer;

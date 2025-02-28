@@ -65,6 +65,7 @@ void BusReceiver::receiveCallback(int numBytes) {
       case 0x1:
         if (state == SOLVED && value != NOT_STARTED) return;
         state = static_cast<ModuleState>(value);
+        if (state == PLAYING) justStarted = true;
         break;
 
       case 0x3:

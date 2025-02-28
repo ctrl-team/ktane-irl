@@ -20,9 +20,9 @@
 #define STRIP_BLUE_PIN 18
 
 enum ButtonLabel {
-  ABORT = 1,
-  DETONATE = 2,
-  HOLD = 3
+  ABORT = 0,
+  DETONATE = 1,
+  HOLD = 2
 };
 
 enum Color {
@@ -45,7 +45,7 @@ uint16_t duration = 0;  // Duration of the press
 // Example mock values (replace with actual logic to read these values)
 ButtonLabel buttonLabel = ABORT;  // Button label ("Abort", "Detonate", etc.)
 Color buttonColor = BLUE;  // Button color ("Blue", "White", "Yellow", "Red")
-Color stripColor = static_cast<Color>(random(1, 5));
+Color stripColor = BLUE;
 
 // Variables to track button state
 bool buttonPressed = false;
@@ -220,18 +220,16 @@ void setup() {
   Serial.print("Module 0x");
   Serial.print(receiver.moduleAddress, HEX);
   Serial.println(" initialized");
-
-  Serial.print("Button color: ");
-  Serial.println(buttonColor);
-
-  Serial.print("Button label: ");
-  Serial.println(buttonLabel);
-
-  Serial.print("Strip color: ");
-  Serial.println(stripColor);
 }
 
 void loop() {
+  if (receiver.justStarted) {
+    receiver.justStarted = false;
+    buttonLabel = static_cast<ButtonLabel>(random(3));
+    buttonColor = static_cast<Color>(random(4));
+    buttonColor = static_cast<Color>(random(7));
+  }
+
   if (receiver.state == PLAYING)
     handleButton();
 

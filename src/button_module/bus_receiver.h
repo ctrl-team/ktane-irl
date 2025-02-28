@@ -30,7 +30,7 @@ class BusReceiver {
   public:
     ModuleState state;
     ModuleType type;
-    ModuleConfiguration configuration;
+    ModuleConfiguration config;
 
     uint8_t moduleAddress;
     uint16_t timer;

@@ -38,7 +38,7 @@ public:
   int moduleCount;
   Module modules[END_ADDRESS];
   ModuleState state;
-  ModuleConfiguration configuration;
+  ModuleConfiguration config;
   bool justStriked;
   bool justSolved;
   int strikes;

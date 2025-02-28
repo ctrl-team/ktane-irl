@@ -30,10 +30,10 @@ void BusReceiver::receiveCallback(int numBytes) {
   numBytes--;
 
   if (requestedCommand == 0x7) {
-    Wire.readBytes(configuration.serial, numBytes);
+    Wire.readBytes(config.serial, numBytes);
 
     Serial.print("Serial number received: ");
-    Serial.println(configuration.serial);
+    Serial.println(config.serial);
     
     return;
   }
@@ -46,15 +46,20 @@ void BusReceiver::receiveCallback(int numBytes) {
 
     switch (requestedCommand) {
       case 0x5:
-        configuration.flags = value;
+        config.flags = value;
         Serial.print("Flags set: 0b");
-        Serial.println(configuration.flags, BIN);
+        Serial.println(config.flags, BIN);
         break;
 
       case 0x6:
-        configuration.ports = value;
+        config.ports = value;
         Serial.print("Ports set: 0b");
-        Serial.println(configuration.ports, BIN);
+        Serial.println(config.ports, BIN);
+        break;
+
+      case 0x8:
+        config.batteries = value;
+        Serial.print("Batteries set: ");
         break;
 
       case 0x1:

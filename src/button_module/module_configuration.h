@@ -29,6 +29,7 @@ enum Port {
 struct ModuleConfiguration {
   uint16_t flags;
   uint8_t ports;
+  uint8_t batteries;
   char serial[6]; // 6 chars + \0
 
   ModuleConfiguration();

@@ -89,9 +89,10 @@ void BusController::updateTimer(uint16_t timer) {
 }
 
 void BusController::sendConfiguration() {
-  broadcastPacket(0x5, configuration.flags);
-  broadcastPacket(0x6, configuration.ports);
-  broadcastPacket(0x7, configuration.serial, sizeof(configuration.serial));
+  broadcastPacket(0x5, config.flags);
+  broadcastPacket(0x6, config.ports);
+  broadcastPacket(0x7, config.serial, sizeof(config.serial));
+  broadcastPacket(0x8, config.batteries);
 }
 
 void BusController::begin() {

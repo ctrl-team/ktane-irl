@@ -337,13 +337,13 @@ void startGame() {
 
   randomSeed(analogRead(A0));
 
-  controller.configuration.randomize(flags, ports, batteries);
+  controller.config.randomize(flags, ports, batteries);
   // Serial.print("Flags set: 0b");
-  // Serial.println(controller.configuration.flags, BIN);
+  // Serial.println(controller.config.flags, BIN);
   // Serial.print("Ports set: 0b");
-  // Serial.println(controller.configuration.ports, BIN);
+  // Serial.println(controller.config.ports, BIN);
   // Serial.print("Serial number: ");
-  // Serial.println(controller.configuration.serial);
+  // Serial.println(controller.config.serial);
 
   controller.sendConfiguration();
 

@@ -23,11 +23,14 @@ bool ModuleConfiguration::hasPort(Port port) const {
 void ModuleConfiguration::clear() {
   flags = 0;
   ports = 0;
+  batteries = 0;
   serial[0] = '\0';
 }
 
-void ModuleConfiguration::randomize(int flagsCount, int portsCount) {
+void ModuleConfiguration::randomize(int flagsCount, int portsCount, int batteries) {
   clear();
+
+  this->batteries = batteries;
 
   randomSeed(analogRead(A0));
 

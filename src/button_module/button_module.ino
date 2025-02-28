@@ -45,8 +45,6 @@ uint16_t duration = 0;  // Duration of the press
 // Example mock values (replace with actual logic to read these values)
 bool hasBatteryMoreThan1 = false;  // More than 1 battery on the bomb
 bool hasBatteryMoreThan2 = false;  // More than 2 batteries
-bool litCARIndicator = true;  // Lit CAR indicator
-bool litFRKIndicator = true;  // Lit FRK indicator
 ButtonLabel buttonLabel = ABORT;  // Button label ("Abort", "Detonate", etc.)
 Color buttonColor = BLUE;  // Button color ("Blue", "White", "Yellow", "Red")
 Color stripColor = static_cast<Color>(random(1, 5));
@@ -88,7 +86,7 @@ bool hasDigitInTimer(int digit) {
 
 bool shouldPressAndRelease() {
   return (hasBatteryMoreThan1 && buttonLabel == DETONATE) ||
-         (hasBatteryMoreThan2 && litFRKIndicator) ||
+         (hasBatteryMoreThan2 && receiver.configuration.hasFlag(FRK)) ||
          (buttonColor == RED && buttonLabel == HOLD);
 }
 

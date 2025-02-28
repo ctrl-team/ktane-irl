@@ -44,7 +44,7 @@ struct ModuleConfiguration {
 
   // configuration
   void clear();
-  void randomize(int flags, int ports);
+  void randomize(int flags, int ports, int batteries);
 };
 
 #endif

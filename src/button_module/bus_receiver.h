@@ -31,6 +31,7 @@ class BusReceiver {
     ModuleState state;
     ModuleType type;
     ModuleConfiguration config;
+    bool justStarted;
 
     uint8_t moduleAddress;
     uint16_t timer;

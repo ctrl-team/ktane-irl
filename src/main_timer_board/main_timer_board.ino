@@ -492,7 +492,7 @@ void loop() {
       Serial.println(controller.strikes);
     }
 
-    if (controller.justStriked) {
+    if (controller.justSolved) {
       tone(BUZZER_PIN, 1000);
       delay(50);
       tone(BUZZER_PIN, 1500);

@@ -29,6 +29,7 @@ enum Port {
 struct ModuleConfiguration {
   uint16_t flags;
   uint8_t ports;
+  uint8_t batteries;
   char serial[6]; // 6 chars
 
   ModuleConfiguration();
@@ -43,7 +44,7 @@ struct ModuleConfiguration {
 
   // configuration
   void clear();
-  void randomize(int flags, int ports);
+  void randomize(int flags, int ports, int batteries);
 };
 
 #endif

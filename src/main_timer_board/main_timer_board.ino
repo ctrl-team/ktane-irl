@@ -19,6 +19,9 @@ enum Menus {
   MAIN_MENU,
   SETTINGS,
   SETTINGS_TIMER,
+  SETTINGS_BATTERIES,
+  SETTINGS_PORTS,
+  SETTINGS_FLAGS,
   INFORMATION
 };
 
@@ -29,6 +32,10 @@ bool rerender = true;
 bool rerenderContent = true;
 Menus openedMenu = MAIN_MENU;
 int selectedItem = 0;
+
+int batteries = 0;
+int flags = 0;
+int ports = 0;
 
 // timing variables
 int lastOpened = 0;
@@ -60,10 +67,34 @@ void renderTopBar() {
     case SETTINGS_TIMER:
       tft.println("Game time");
       break;
+    case SETTINGS_BATTERIES:
+      tft.println("Number of batteries");
+      break;
+    case SETTINGS_FLAGS:
+      tft.println("Number of flags");
+      break;
+    case SETTINGS_PORTS:
+      tft.println("Number of ports");
+      break;
     case INFORMATION:
       tft.println("Information");
       break;
   }
+}
+
+void defaultBottomBar() {
+  int x = tft.textWidth("F1 - UP");
+  int y = tft.textWidth("F2 - DOWN");
+  int z = tft.textWidth("F3 - ENTER");
+
+  tft.print("F1 - UP");
+  tft.setCursor(leftPadding * 3 + x, LCD_HEIGHT - 14);
+  tft.print("F2 - DOWN");
+  tft.setCursor(leftPadding * 5 + x + y, LCD_HEIGHT - 14);
+  tft.print("F3 - ENTER");
+  tft.setCursor(leftPadding * 7 + x + y + z, LCD_HEIGHT - 14);
+  tft.setTextColor(openedMenu == MAIN_MENU ? controller.state == PAUSED ? TFT_WHITE : TFT_DARKGREY : TFT_WHITE);
+  tft.print("F4 - BACK");
 }
 
 void renderBottomBar() {
@@ -80,44 +111,30 @@ void renderBottomBar() {
         tft.print("Display connected modules");
         break;
       default: {
-        int x = tft.textWidth("F1 - UP");
-        int y = tft.textWidth("F2 - DOWN");
-        int z = tft.textWidth("F3 - ENTER");
-
-        tft.print("F1 - UP");
-        tft.setCursor(leftPadding * 3 + x, LCD_HEIGHT - 14);
-        tft.print("F2 - DOWN");
-        tft.setCursor(leftPadding * 5 + x + y, LCD_HEIGHT - 14);
-        tft.print("F3 - ENTER");
-        tft.setCursor(leftPadding * 7 + x + y + z, LCD_HEIGHT - 14);
-        tft.setTextColor(controller.state == PAUSED ? TFT_WHITE : TFT_DARKGREY);
-        tft.print("F4 - BACK");
+        defaultBottomBar();
         break;
       }
     }
+
+    return;
   }
 
-  if (openedMenu == SETTINGS) {
-    int x = tft.textWidth("F1 - UP");
-    int y = tft.textWidth("F2 - DOWN");
-    int z = tft.textWidth("F3 - ENTER");
-
-    tft.print("F1 - UP");
-    tft.setCursor(leftPadding * 3 + x, LCD_HEIGHT - 14);
-    tft.print("F2 - DOWN");
-    tft.setCursor(leftPadding * 5 + x + y, LCD_HEIGHT - 14);
-    tft.print("F3 - ENTER");
-    tft.setCursor(leftPadding * 7 + x + y + z, LCD_HEIGHT - 14);
-    tft.print("F4 - BACK");
-  }
-
-  if (openedMenu == SETTINGS_TIMER) {
+  if (
+    openedMenu == SETTINGS_TIMER ||
+    openedMenu == SETTINGS_BATTERIES ||
+    openedMenu == SETTINGS_FLAGS ||
+    openedMenu == SETTINGS_PORTS
+  ) {
     tft.print("F1 +");
     tft.setCursor(leftPadding * 3 + tft.textWidth("F1 +"), LCD_HEIGHT - 14);
     tft.print("F2 -");
     tft.setCursor(leftPadding * 5 + tft.textWidth("F1 +") + tft.textWidth("F2 -"), LCD_HEIGHT - 14);
     tft.print("F3 - SAVE");
+
+    return;
   }
+
+  defaultBottomBar();
 }
 
 void renderContent() {
@@ -139,11 +156,54 @@ void renderContent() {
   if (openedMenu == SETTINGS) {
     tft.setTextColor(TFT_WHITE, selectedItem == 0 ? TFT_DARKGREEN : TFT_BLACK);
     tft.print("Timer");
+
+    tft.setCursor(leftPadding, 22 + tft.fontHeight() + 4, 2);
+    tft.setTextColor(TFT_WHITE, selectedItem == 1 ? TFT_DARKGREEN : TFT_BLACK);
+    tft.print("Batteries");
+
+    tft.setCursor(leftPadding, 22 + tft.fontHeight() * 2 + 8, 2);
+    tft.setTextColor(TFT_WHITE, selectedItem == 2 ? TFT_DARKGREEN : TFT_BLACK);
+    tft.print("Flags");
+
+    tft.setCursor(leftPadding, 22 + tft.fontHeight() * 3 + 12, 2);
+    tft.setTextColor(TFT_WHITE, selectedItem == 3 ? TFT_DARKGREEN : TFT_BLACK);
+    tft.print("Ports");
+
+    tft.setCursor(leftPadding, 22 + tft.fontHeight() * 4 + 16, 2);
+    tft.setTextColor(TFT_WHITE, selectedItem == 4 ? TFT_DARKGREEN : TFT_BLACK);
+    tft.print("Randomize");
   }
 
   if (openedMenu == SETTINGS_TIMER) {
     char buffer[6];
     sprintf(buffer, "%02d:%02d", defaultTimer / 60, defaultTimer % 60);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setTextFont(6);
+    tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth(buffer) / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
+    tft.print(buffer);
+  }
+
+  if (openedMenu == SETTINGS_BATTERIES) {
+    char buffer[3];
+    sprintf(buffer, "%02d", batteries);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setTextFont(6);
+    tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth(buffer) / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
+    tft.print(buffer);
+  }
+
+  if (openedMenu == SETTINGS_FLAGS) {
+    char buffer[3];
+    sprintf(buffer, "%02d", flags);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setTextFont(6);
+    tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth(buffer) / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
+    tft.print(buffer);
+  }
+
+  if (openedMenu == SETTINGS_PORTS) {
+    char buffer[2];
+    sprintf(buffer, "%d", ports);
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.setTextFont(6);
     tft.setCursor((LCD_WIDTH / 2) - (tft.textWidth(buffer) / 2), (LCD_HEIGHT / 2) - (tft.fontHeight() / 2));
@@ -277,7 +337,7 @@ void startGame() {
 
   randomSeed(analogRead(A0));
 
-  controller.configuration.randomize(random(6), random(3));
+  controller.configuration.randomize(flags, ports, batteries);
   // Serial.print("Flags set: 0b");
   // Serial.println(controller.configuration.flags, BIN);
   // Serial.print("Ports set: 0b");
@@ -318,10 +378,19 @@ void handleButtons() {
       selectedItem = (selectedItem == 0) ? 2 : selectedItem - 1;
 
     if (openedMenu == SETTINGS)
-      selectedItem = (selectedItem == 0) ? 1 : selectedItem - 1;
+      selectedItem = (selectedItem == 0) ? 4 : selectedItem - 1;
 
     if (openedMenu == SETTINGS_TIMER)
-      defaultTimer++;
+      defaultTimer < sizeof(uint16_t) && defaultTimer++;
+
+    if (openedMenu == SETTINGS_BATTERIES)
+      batteries <= 10 && batteries++;
+
+    if (openedMenu == SETTINGS_FLAGS)
+      flags <= 11 && flags++;
+
+    if (openedMenu == SETTINGS_PORTS)
+      ports <= 6 && ports++;
 
     rerenderContent = true;
   }
@@ -333,10 +402,19 @@ void handleButtons() {
       selectedItem = ++selectedItem % 3;
     
     if (openedMenu == SETTINGS)
-      selectedItem = ++selectedItem % 1;
+      selectedItem = ++selectedItem % 5;
 
     if (openedMenu == SETTINGS_TIMER)
       defaultTimer > 0 && defaultTimer--;
+
+    if (openedMenu == SETTINGS_BATTERIES)
+      batteries > 0 && batteries--;
+
+    if (openedMenu == SETTINGS_FLAGS)
+      flags > 0 && flags--;
+
+    if (openedMenu == SETTINGS_PORTS)
+      ports > 0 && ports--;
 
     rerenderContent = true;
   }
@@ -373,25 +451,45 @@ void handleButtons() {
           openedMenu = SETTINGS_TIMER;
           rerender = true;
           break;
+        case 1:
+          openedMenu = SETTINGS_BATTERIES;
+          rerender = true;
+          break;
+        case 2:
+          openedMenu = SETTINGS_FLAGS;
+          rerender = true;
+          break;
+        case 3:
+          openedMenu = SETTINGS_PORTS;
+          rerender = true;
+          break;
+        case 4:
+          randomSeed(analogRead(A1));
+          batteries = random(0, 10);
+          flags = random(0, 11);
+          ports = random(0, 6);
+          break;
       }
 
       return;
     }
     
-    if (openedMenu == NONE) {
-      controller.updateState(PAUSED);
-
-      openedMenu = MAIN_MENU;
+    if (
+      openedMenu == SETTINGS_TIMER ||
+      openedMenu == SETTINGS_BATTERIES ||
+      openedMenu == SETTINGS_FLAGS ||
+      openedMenu == SETTINGS_PORTS
+    ) {
+      openedMenu = SETTINGS;
       rerender = true;
-      lastOpened = millis();
-
       return;
     }
 
-    if (openedMenu == SETTINGS_TIMER) {
-      openedMenu = SETTINGS;
+    if (openedMenu == NONE) {
+      controller.updateState(PAUSED);
+      openedMenu = MAIN_MENU;
       rerender = true;
-
+      lastOpened = millis();
       return;
     }
   }

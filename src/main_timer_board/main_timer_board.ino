@@ -381,7 +381,7 @@ void handleButtons() {
       selectedItem = (selectedItem == 0) ? 4 : selectedItem - 1;
 
     if (openedMenu == SETTINGS_TIMER)
-      defaultTimer < sizeof(uint16_t) && defaultTimer++;
+      defaultTimer++;
 
     if (openedMenu == SETTINGS_BATTERIES)
       batteries <= 10 && batteries++;
@@ -424,7 +424,7 @@ void handleButtons() {
       tone(BUZZER_PIN, 1000, 50);
     }
 
-    if (openedMenu == MAIN_MENU) {
+    if (openedMenu == MAIN_MENU && !rerender) {
       switch (selectedItem) {
         case 0:
           if (controller.state == PAUSED)
@@ -441,11 +441,9 @@ void handleButtons() {
           rerender = true;
           break;
       }
-
-      return;
     }
 
-    if (openedMenu == SETTINGS) {
+    if (openedMenu == SETTINGS && !rerender) {
       switch (selectedItem) {
         case 0:
           openedMenu = SETTINGS_TIMER;
@@ -470,48 +468,39 @@ void handleButtons() {
           ports = random(0, 6);
           break;
       }
-
-      return;
     }
     
     if (
-      openedMenu == SETTINGS_TIMER ||
+      (openedMenu == SETTINGS_TIMER ||
       openedMenu == SETTINGS_BATTERIES ||
       openedMenu == SETTINGS_FLAGS ||
-      openedMenu == SETTINGS_PORTS
+      openedMenu == SETTINGS_PORTS) && !rerender
     ) {
       openedMenu = SETTINGS;
       rerender = true;
-      return;
     }
 
-    if (openedMenu == NONE) {
+    if (openedMenu == NONE && !rerender) {
       controller.updateState(PAUSED);
       openedMenu = MAIN_MENU;
       rerender = true;
       lastOpened = millis();
-      return;
     }
   }
 
   if (backState && !backPressed) {
     tone(BUZZER_PIN, 1000, 50);
 
-    if (openedMenu == MAIN_MENU && controller.state == PAUSED) {
+    if (openedMenu == MAIN_MENU && controller.state == PAUSED && !rerender) {
       controller.updateState(PLAYING);
 
       openedMenu = NONE;
       rerender = true;
     }
 
-    if (openedMenu == SETTINGS || openedMenu == INFORMATION) {
+    if (openedMenu == SETTINGS || openedMenu == INFORMATION && !rerender) {
       openedMenu = MAIN_MENU;
       rerender = true;
-    }
-
-    if (openedMenu == SETTINGS_TIMER) {
-      defaultTimer++;
-      rerenderContent = true;
     }
   }
 

@@ -224,10 +224,24 @@ void setup() {
 
 void loop() {
   if (receiver.justStarted) {
+    randomSeed(analogRead(A1));
+
     receiver.justStarted = false;
     buttonLabel = static_cast<ButtonLabel>(random(3));
     buttonColor = static_cast<Color>(random(4));
-    buttonColor = static_cast<Color>(random(7));
+    stripColor = static_cast<Color>(random(7));
+
+    Serial.println("New game started!");
+    Serial.print("Button label: ");
+    Serial.println(buttonLabel);
+    Serial.print("Button color: ");
+    Serial.println(buttonColor);
+    Serial.print("Strip color: ");
+    Serial.println(stripColor);
+    Serial.print("FRK: ");
+    Serial.println(receiver.config.hasFlag(FRK) ? "yes" : "no");
+    Serial.print("Batteries: ");
+    Serial.println(receiver.config.batteries);
   }
 
   if (receiver.state == PLAYING)

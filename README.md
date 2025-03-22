@@ -24,9 +24,14 @@ TFT_eSPI requires a proper `User_Setup_Select.h` configuration. Users must manua
 ```sh
 TFT_eSPI/User_Setup_Select.h
 ```
-to include:
+#### to include:
+for main timer board
 ```cpp
 #include "User_Setups/Setup304_RP2040_ILI9341_Waveshare_2_4"
+```
+for button module
+```cpp
+#include <User_Setups/Setup61_RP2040_GC9A01.h>
 ```
 
 ## License

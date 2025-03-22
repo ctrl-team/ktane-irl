@@ -31,7 +31,7 @@ for main timer board
 ```
 for button module
 ```cpp
-#include <User_Setups/Setup61_RP2040_GC9A01.h>
+#include <User_Setups/Setup305_RP2040_GC9A01.h>
 ```
 
 ## License
